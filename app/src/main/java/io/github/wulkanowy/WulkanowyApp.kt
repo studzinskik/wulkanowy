@@ -6,12 +6,9 @@ import android.util.Log.INFO
 import android.util.Log.VERBOSE
 import androidx.multidex.MultiDex
 import androidx.work.Configuration
-import com.jakewharton.threetenabp.AndroidThreeTen
 import com.yariksoffice.lingver.Lingver
 import dagger.android.AndroidInjector
 import dagger.android.support.DaggerApplication
-import eu.davidea.flexibleadapter.FlexibleAdapter
-import eu.davidea.flexibleadapter.utils.Log
 import fr.bipi.tressence.file.FileLoggerTree
 import io.github.wulkanowy.di.DaggerAppComponent
 import io.github.wulkanowy.services.sync.SyncWorkerFactory
@@ -21,11 +18,7 @@ import io.github.wulkanowy.utils.AppInfo
 import io.github.wulkanowy.utils.CrashlyticsExceptionTree
 import io.github.wulkanowy.utils.CrashlyticsTree
 import io.github.wulkanowy.utils.DebugLogTree
-import io.github.wulkanowy.utils.initCrashlytics
-import io.reactivex.exceptions.UndeliverableException
-import io.reactivex.plugins.RxJavaPlugins
 import timber.log.Timber
-import java.io.IOException
 import javax.inject.Inject
 
 class WulkanowyApp : DaggerApplication(), Configuration.Provider {
@@ -46,18 +39,14 @@ class WulkanowyApp : DaggerApplication(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
-        AndroidThreeTen.init(this)
-        RxJavaPlugins.setErrorHandler(::onError)
         Lingver.init(this)
         themeManager.applyDefaultTheme()
 
         initLogging()
-        initCrashlytics(this, appInfo)
     }
 
     private fun initLogging() {
         if (appInfo.isDebug) {
-            FlexibleAdapter.enableLogs(Log.Level.DEBUG)
             Timber.plant(DebugLogTree())
             Timber.plant(FileLoggerTree.Builder()
                 .withFileName("wulkanowy.%g.log")
@@ -71,14 +60,6 @@ class WulkanowyApp : DaggerApplication(), Configuration.Provider {
             Timber.plant(CrashlyticsTree())
         }
         registerActivityLifecycleCallbacks(ActivityLifecycleLogger())
-    }
-
-    private fun onError(error: Throwable) {
-        //RxJava's too deep stack traces may cause SOE on older android devices
-        val cause = error.cause
-        if (error is UndeliverableException && cause is IOException || cause is InterruptedException || cause is StackOverflowError) {
-            Timber.e(cause, "An undeliverable error occurred")
-        } else throw error
     }
 
     override fun applicationInjector(): AndroidInjector<out DaggerApplication> {

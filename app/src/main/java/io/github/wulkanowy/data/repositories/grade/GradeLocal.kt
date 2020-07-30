@@ -1,28 +1,49 @@
 package io.github.wulkanowy.data.repositories.grade
 
 import io.github.wulkanowy.data.db.dao.GradeDao
+import io.github.wulkanowy.data.db.dao.GradeSummaryDao
 import io.github.wulkanowy.data.db.entities.Grade
+import io.github.wulkanowy.data.db.entities.GradeSummary
 import io.github.wulkanowy.data.db.entities.Semester
-import io.reactivex.Maybe
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class GradeLocal @Inject constructor(private val gradeDb: GradeDao) {
+class GradeLocal @Inject constructor(
+    private val gradeDb: GradeDao,
+    private val gradeSummaryDb: GradeSummaryDao
+) {
 
-    fun saveGrades(grades: List<Grade>) {
+    suspend fun saveGrades(grades: List<Grade>) {
         gradeDb.insertAll(grades)
     }
 
-    fun deleteGrades(grades: List<Grade>) {
+    suspend fun deleteGrades(grades: List<Grade>) {
         gradeDb.deleteAll(grades)
     }
 
-    fun updateGrades(grades: List<Grade>) {
+    suspend fun updateGrades(grades: List<Grade>) {
         gradeDb.updateAll(grades)
     }
 
-    fun getGrades(semester: Semester): Maybe<List<Grade>> {
-        return gradeDb.loadAll(semester.semesterId, semester.studentId).filter { it.isNotEmpty() }
+    suspend fun updateGradesSummary(gradesSummary: List<GradeSummary>) {
+        gradeSummaryDb.updateAll(gradesSummary)
+    }
+
+    fun getGradesDetails(semester: Semester): Flow<List<Grade>> {
+        return gradeDb.loadAll(semester.semesterId, semester.studentId)
+    }
+
+    suspend fun saveGradesSummary(gradesSummary: List<GradeSummary>) {
+        gradeSummaryDb.insertAll(gradesSummary)
+    }
+
+    suspend fun deleteGradesSummary(gradesSummary: List<GradeSummary>) {
+        gradeSummaryDb.deleteAll(gradesSummary)
+    }
+
+    fun getGradesSummary(semester: Semester): Flow<List<GradeSummary>> {
+        return gradeSummaryDb.loadAll(semester.semesterId, semester.studentId)
     }
 }

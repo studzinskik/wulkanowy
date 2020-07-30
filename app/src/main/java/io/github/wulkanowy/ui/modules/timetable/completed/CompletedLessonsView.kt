@@ -2,7 +2,7 @@ package io.github.wulkanowy.ui.modules.timetable.completed
 
 import io.github.wulkanowy.data.db.entities.CompletedLesson
 import io.github.wulkanowy.ui.base.BaseView
-import org.threeten.bp.LocalDate
+import java.time.LocalDate
 
 interface CompletedLessonsView : BaseView {
 
@@ -10,7 +10,7 @@ interface CompletedLessonsView : BaseView {
 
     fun initView()
 
-    fun updateData(data: List<CompletedLessonItem>)
+    fun updateData(data: List<CompletedLesson>)
 
     fun clearData()
 

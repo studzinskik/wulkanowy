@@ -1,6 +1,6 @@
 package io.github.wulkanowy.ui.modules.grade.details
 
-import eu.davidea.flexibleadapter.items.AbstractFlexibleItem
+import io.github.wulkanowy.data.Status
 import io.github.wulkanowy.data.db.entities.Grade
 import io.github.wulkanowy.data.repositories.grade.GradeRepository
 import io.github.wulkanowy.data.repositories.preferences.PreferencesRepository
@@ -9,14 +9,17 @@ import io.github.wulkanowy.data.repositories.student.StudentRepository
 import io.github.wulkanowy.ui.base.BasePresenter
 import io.github.wulkanowy.ui.base.ErrorHandler
 import io.github.wulkanowy.ui.modules.grade.GradeAverageProvider
+import io.github.wulkanowy.ui.modules.grade.GradeDetailsWithAverage
 import io.github.wulkanowy.utils.FirebaseAnalyticsHelper
-import io.github.wulkanowy.utils.SchedulersProvider
-import io.github.wulkanowy.utils.getBackgroundColor
+import io.github.wulkanowy.utils.afterLoading
+import io.github.wulkanowy.utils.flowWithResource
+import io.github.wulkanowy.utils.flowWithResourceIn
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.onEach
 import timber.log.Timber
 import javax.inject.Inject
 
 class GradeDetailsPresenter @Inject constructor(
-    schedulers: SchedulersProvider,
     errorHandler: ErrorHandler,
     studentRepository: StudentRepository,
     private val gradeRepository: GradeRepository,
@@ -24,7 +27,7 @@ class GradeDetailsPresenter @Inject constructor(
     private val preferencesRepository: PreferencesRepository,
     private val averageProvider: GradeAverageProvider,
     private val analytics: FirebaseAnalyticsHelper
-) : BasePresenter<GradeDetailsView>(errorHandler, studentRepository, schedulers) {
+) : BasePresenter<GradeDetailsView>(errorHandler, studentRepository) {
 
     private var newGradesAmount: Int = 0
 
@@ -40,50 +43,48 @@ class GradeDetailsPresenter @Inject constructor(
 
     fun onParentViewLoadData(semesterId: Int, forceRefresh: Boolean) {
         currentSemesterId = semesterId
+
         loadData(semesterId, forceRefresh)
+        if (!forceRefresh) view?.showErrorView(false)
     }
 
-    fun onGradeItemSelected(item: AbstractFlexibleItem<*>?) {
-        if (item is GradeDetailsItem) {
-            Timber.i("Select grade item ${item.grade.id}")
-            view?.apply {
-                showGradeDialog(item.grade, preferencesRepository.gradeColorTheme)
-                if (!item.grade.isRead) {
-                    item.grade.isRead = true
-                    updateItem(item)
-                    getHeaderOfItem(item)?.let { header ->
-                        if (header is GradeDetailsHeader) {
-                            header.newGrades--
-                            updateItem(header)
-                        }
-                    }
-                    newGradesAmount--
-                    updateMarkAsDoneButton()
-                    updateGrade(item.grade)
+    fun onGradeItemSelected(grade: Grade, position: Int) {
+        Timber.i("Select grade item ${grade.id}, position: $position")
+        view?.apply {
+            showGradeDialog(grade, preferencesRepository.gradeColorTheme)
+            if (!grade.isRead) {
+                grade.isRead = true
+                updateItem(grade, position)
+                getHeaderOfItem(grade.subject).let { header ->
+                    (header.value as GradeDetailsHeader).newGrades--
+                    updateHeaderItem(header)
                 }
+                newGradesAmount--
+                updateMarkAsDoneButton()
+                updateGrade(grade)
             }
         }
     }
 
     fun onMarkAsReadSelected(): Boolean {
-        Timber.i("Select mark grades as read")
-        disposable.add(studentRepository.getCurrentStudent()
-            .flatMap { semesterRepository.getSemesters(it) }
-            .flatMap { gradeRepository.getUnreadGrades(it.first { item -> item.semesterId == currentSemesterId }) }
-            .map { it.map { grade -> grade.apply { isRead = true } } }
-            .flatMapCompletable {
-                Timber.i("Mark as read ${it.size} grades")
-                gradeRepository.updateGrades(it)
+        flowWithResource {
+            val student = studentRepository.getCurrentStudent()
+            val semesters = semesterRepository.getSemesters(student)
+            val semester = semesters.first { item -> item.semesterId == currentSemesterId }
+            val unreadGrades = gradeRepository.getUnreadGrades(semester).first()
+
+            Timber.i("Mark as read ${unreadGrades.size} grades")
+            gradeRepository.updateGrades(unreadGrades.map { it.apply { isRead = true } })
+        }.onEach {
+            when (it.status) {
+                Status.LOADING -> Timber.i("Select mark grades as read")
+                Status.SUCCESS -> Timber.i("Mark as read result: Success")
+                Status.ERROR -> {
+                    Timber.i("Mark as read result: An exception occurred")
+                    errorHandler.dispatch(it.error!!)
+                }
             }
-            .subscribeOn(schedulers.backgroundThread)
-            .observeOn(schedulers.mainThread)
-            .subscribe({
-                Timber.i("Mark as read result: Success")
-                loadData(currentSemesterId, false)
-            }, {
-                Timber.i("Mark as read result: An exception occurred")
-                errorHandler.dispatch(it)
-            }))
+        }.launch("mark")
         return true
     }
 
@@ -122,7 +123,7 @@ class GradeDetailsPresenter @Inject constructor(
             showEmpty(false)
             clearView()
         }
-        disposable.clear()
+        cancelJobs("load")
     }
 
     fun updateMarkAsDoneButton() {
@@ -130,43 +131,46 @@ class GradeDetailsPresenter @Inject constructor(
     }
 
     private fun loadData(semesterId: Int, forceRefresh: Boolean) {
-        Timber.i("Loading grade details data started")
-        disposable.add(studentRepository.getCurrentStudent()
-            .flatMap { semesterRepository.getSemesters(it).map { semester -> it to semester } }
-            .flatMap { (student, semesters) ->
-                averageProvider.getGradeAverage(student, semesters, semesterId, forceRefresh)
-                    .flatMap { averages ->
-                        gradeRepository.getGrades(student, semesters.first { it.semesterId == semesterId }, forceRefresh)
-                            .map { it.sortedByDescending { grade -> grade.date } }
-                            .map { it.groupBy { grade -> grade.subject }.toSortedMap() }
-                            .map { createGradeItems(it, averages) }
+        flowWithResourceIn {
+            val student = studentRepository.getCurrentStudent()
+            averageProvider.getGradesDetailsWithAverage(student, semesterId, forceRefresh)
+        }.onEach {
+            when (it.status) {
+                Status.LOADING -> Timber.i("Loading grade details data started")
+                Status.SUCCESS -> {
+                    Timber.i("Loading grade details result: Success")
+                    newGradesAmount = it.data!!.sumBy { item -> item.grades.sumBy { grade -> if (!grade.isRead) 1 else 0 } }
+                    updateMarkAsDoneButton()
+                    val items = createGradeItems(it.data)
+                    view?.run {
+                        showEmpty(items.isEmpty())
+                        showErrorView(false)
+                        showContent(items.isNotEmpty())
+                        updateData(
+                            data = items,
+                            isGradeExpandable = preferencesRepository.isGradeExpandable,
+                            gradeColorTheme = preferencesRepository.gradeColorTheme
+                        )
                     }
-            }
-            .subscribeOn(schedulers.backgroundThread)
-            .observeOn(schedulers.mainThread)
-            .doFinally {
-                view?.run {
-                    showRefresh(false)
-                    showProgress(false)
-                    enableSwipe(true)
-                    notifyParentDataLoaded(semesterId)
+                    analytics.logEvent(
+                        "load_data",
+                        "type" to "grade_details",
+                        "items" to it.data.size
+                    )
+                }
+                Status.ERROR -> {
+                    Timber.i("Loading grade details result: An exception occurred")
+                    errorHandler.dispatch(it.error!!)
                 }
             }
-            .subscribe({
-                Timber.i("Loading grade details result: Success")
-                newGradesAmount = it.sumBy { gradeDetailsHeader -> gradeDetailsHeader.newGrades }
-                updateMarkAsDoneButton()
-                view?.run {
-                    showEmpty(it.isEmpty())
-                    showErrorView(false)
-                    showContent(it.isNotEmpty())
-                    updateData(it)
-                }
-                analytics.logEvent("load_grade_details", "items" to it.size, "force_refresh" to forceRefresh)
-            }) {
-                Timber.i("Loading grade details result: An exception occurred")
-                errorHandler.dispatch(it)
-            })
+        }.afterLoading {
+            view?.run {
+                showRefresh(false)
+                showProgress(false)
+                enableSwipe(true)
+                notifyParentDataLoaded(semesterId)
+            }
+        }.launch()
     }
 
     private fun showErrorViewOnError(message: String, error: Throwable) {
@@ -180,51 +184,35 @@ class GradeDetailsPresenter @Inject constructor(
         }
     }
 
-    private fun createGradeItems(items: Map<String, List<Grade>>, averages: List<Triple<String, Double, String>>): List<GradeDetailsHeader> {
-        val isGradeExpandable = preferencesRepository.isGradeExpandable
-        val gradeColorTheme = preferencesRepository.gradeColorTheme
+    private fun createGradeItems(items: List<GradeDetailsWithAverage>): List<GradeDetailsItem> {
+        return items
+            .filter { it.grades.isNotEmpty() }
+            .sortedBy { it.subject }
+            .map { (subject, average, points, _, grades) ->
+                val subItems = grades
+                    .sortedByDescending { it.date }
+                    .map { GradeDetailsItem(it, ViewType.ITEM) }
 
-        val noDescriptionString = view?.noDescriptionString.orEmpty()
-        val weightString = view?.weightString.orEmpty()
-        val pointsSumString = view?.pointsSumString.orEmpty()
-
-        return items.map { subject ->
-            GradeDetailsHeader(
-                subject = subject.key,
-                average = formatAverage(averages.singleOrNull { subject.key == it.first }?.second),
-                pointsSum = averages.singleOrNull { subject.key == it.first }?.takeIf { it.third.isNotEmpty() }?.let { pointsSumString.format(it.third) }.orEmpty(),
-                number = view?.getGradeNumberString(subject.value.size).orEmpty(),
-                newGrades = subject.value.filter { grade -> !grade.isRead }.size,
-                isExpandable = isGradeExpandable
-            ).apply {
-                subItems = subject.value.map { item ->
-                    GradeDetailsItem(
-                        grade = item,
-                        valueBgColor = item.getBackgroundColor(gradeColorTheme),
-                        weightString = weightString,
-                        noDescriptionString = noDescriptionString
-                    )
-                }
-            }
-        }
-    }
-
-    private fun formatAverage(average: Double?): String {
-        return view?.run {
-            if (average == null || average == .0) emptyAverageString
-            else averageString.format(average)
-        }.orEmpty()
+                listOf(GradeDetailsItem(GradeDetailsHeader(
+                    subject = subject,
+                    average = average,
+                    pointsSum = points,
+                    newGrades = grades.filter { grade -> !grade.isRead }.size,
+                    grades = subItems
+                ), ViewType.HEADER)) + if (preferencesRepository.isGradeExpandable) emptyList() else subItems
+            }.flatten()
     }
 
     private fun updateGrade(grade: Grade) {
-        Timber.i("Attempt to update grade ${grade.id}")
-        disposable.add(gradeRepository.updateGrade(grade)
-            .subscribeOn(schedulers.backgroundThread)
-            .observeOn(schedulers.mainThread)
-            .subscribe({ Timber.i("Update grade result: Success") })
-            { error ->
-                Timber.i("Update grade result: An exception occurred")
-                errorHandler.dispatch(error)
-            })
+        flowWithResource { gradeRepository.updateGrade(grade) }.onEach {
+            when (it.status) {
+                Status.LOADING -> Timber.i("Attempt to update grade ${grade.id}")
+                Status.SUCCESS -> Timber.i("Update grade result: Success")
+                Status.ERROR -> {
+                    Timber.i("Update grade result: An exception occurred")
+                    errorHandler.dispatch(it.error!!)
+                }
+            }
+        }.launch("update")
     }
 }

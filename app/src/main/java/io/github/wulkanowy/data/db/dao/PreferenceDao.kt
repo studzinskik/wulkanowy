@@ -12,8 +12,8 @@ import javax.inject.Singleton
 interface PreferenceDao : BaseDao<Preference> {
 
     @Insert(onConflict = REPLACE)
-    fun putPreference(preference: Preference)
+    suspend fun putPreference(preference: Preference)
 
     @Query("SELECT * FROM Preferences WHERE studentId = :studentId AND `key` = :key")
-    fun getPreference(studentId: Int, key: String): Preference?
+    suspend fun getPreference(studentId: Int, key: String): Preference?
 }

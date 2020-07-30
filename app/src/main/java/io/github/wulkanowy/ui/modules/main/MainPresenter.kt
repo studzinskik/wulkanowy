@@ -9,18 +9,16 @@ import io.github.wulkanowy.ui.modules.main.MainView.Section.GRADE
 import io.github.wulkanowy.ui.modules.main.MainView.Section.MESSAGE
 import io.github.wulkanowy.ui.modules.main.MainView.Section.SCHOOL
 import io.github.wulkanowy.utils.FirebaseAnalyticsHelper
-import io.github.wulkanowy.utils.SchedulersProvider
 import timber.log.Timber
 import javax.inject.Inject
 
 class MainPresenter @Inject constructor(
-    schedulers: SchedulersProvider,
     errorHandler: ErrorHandler,
     studentRepository: StudentRepository,
     private val prefRepository: PreferencesRepository,
     private val syncManager: SyncManager,
     private val analytics: FirebaseAnalyticsHelper
-) : BasePresenter<MainView>(errorHandler, studentRepository, schedulers) {
+) : BasePresenter<MainView>(errorHandler, studentRepository) {
 
     fun onAttachView(view: MainView, initMenu: MainView.Section?) {
         super.onAttachView(view)
@@ -33,12 +31,13 @@ class MainPresenter @Inject constructor(
             Timber.i("Main view was initialized with $startMenuIndex menu index and $startMenuMoreIndex more index")
         }
 
-        syncManager.startSyncWorker()
+        syncManager.startPeriodicSyncWorker()
         analytics.logEvent("app_open", "destination" to initMenu?.name)
     }
 
-    fun onViewChange(section: MainView.Section?) {
+    fun onViewChange(section: MainView.Section?, name: String?) {
         view?.apply {
+            setCurrentScreen(name)
             showActionBarElevation(section != GRADE && section != MESSAGE && section != SCHOOL)
             currentViewTitle?.let { setViewTitle(it) }
             currentViewSubtitle?.let { setViewSubTitle(it.ifBlank { null }) }

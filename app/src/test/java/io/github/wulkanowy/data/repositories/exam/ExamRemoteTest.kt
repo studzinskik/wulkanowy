@@ -1,55 +1,64 @@
 package io.github.wulkanowy.data.repositories.exam
 
 import io.github.wulkanowy.data.db.entities.Semester
+import io.github.wulkanowy.getStudentEntity
 import io.github.wulkanowy.sdk.Sdk
 import io.github.wulkanowy.sdk.pojo.Exam
+import io.github.wulkanowy.utils.init
 import io.mockk.MockKAnnotations
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
-import io.reactivex.Single
+import io.mockk.impl.annotations.SpyK
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import org.threeten.bp.LocalDate
-import org.threeten.bp.LocalDate.of
+import java.time.LocalDate
+import java.time.LocalDate.of
 
 class ExamRemoteTest {
 
-    @MockK
-    private lateinit var mockSdk: Sdk
+    @SpyK
+    private var mockSdk = Sdk()
 
     @MockK
     private lateinit var semesterMock: Semester
 
+    private val student = getStudentEntity()
+
     @Before
-    fun initApi() {
+    fun setUp() {
         MockKAnnotations.init(this)
     }
 
     @Test
     fun getExamsTest() {
-        every {
+        every { mockSdk.init(student) } returns mockSdk
+        every { mockSdk.switchDiary(1, 2019) } returns mockSdk
+
+        coEvery {
             mockSdk.getExams(
                 of(2018, 9, 10),
                 of(2018, 9, 15),
                 1
             )
-        } returns Single.just(listOf(
+        } returns listOf(
             getExam(of(2018, 9, 10)),
             getExam(of(2018, 9, 17))
-        ))
+        )
 
         every { semesterMock.studentId } returns 1
         every { semesterMock.diaryId } returns 1
         every { semesterMock.schoolYear } returns 2019
         every { semesterMock.semesterId } returns 1
-        every { mockSdk.switchDiary(any(), any()) } returns mockSdk
 
-        val exams = ExamRemote(mockSdk)
-            .getExams(semesterMock,
+        val exams = runBlocking {
+            ExamRemote(mockSdk).getExams(student, semesterMock,
                 of(2018, 9, 10),
                 of(2018, 9, 15)
-            ).blockingGet()
+            )
+        }
         assertEquals(2, exams.size)
     }
 

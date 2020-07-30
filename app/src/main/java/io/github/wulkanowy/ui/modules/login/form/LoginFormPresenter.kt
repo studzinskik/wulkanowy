@@ -1,20 +1,24 @@
 package io.github.wulkanowy.ui.modules.login.form
 
+import io.github.wulkanowy.data.Status
 import io.github.wulkanowy.data.repositories.student.StudentRepository
 import io.github.wulkanowy.ui.base.BasePresenter
 import io.github.wulkanowy.ui.modules.login.LoginErrorHandler
 import io.github.wulkanowy.utils.FirebaseAnalyticsHelper
-import io.github.wulkanowy.utils.SchedulersProvider
+import io.github.wulkanowy.utils.afterLoading
+import io.github.wulkanowy.utils.flowWithResource
 import io.github.wulkanowy.utils.ifNullOrBlank
+import kotlinx.coroutines.flow.onEach
 import timber.log.Timber
 import javax.inject.Inject
 
 class LoginFormPresenter @Inject constructor(
-    schedulers: SchedulersProvider,
     studentRepository: StudentRepository,
     private val loginErrorHandler: LoginErrorHandler,
     private val analytics: FirebaseAnalyticsHelper
-) : BasePresenter<LoginFormView>(loginErrorHandler, studentRepository, schedulers) {
+) : BasePresenter<LoginFormView>(loginErrorHandler, studentRepository) {
+
+    private var lastError: Throwable? = null
 
     override fun onAttachView(view: LoginFormView) {
         super.onAttachView(view)
@@ -46,21 +50,13 @@ class LoginFormPresenter @Inject constructor(
             if (formHostValue.contains("fakelog")) {
                 setCredentials("jan@fakelog.cf", "jan123")
             }
-            setSymbol(formHostSymbol)
             updateUsernameLabel()
-            updateSymbolInputVisibility()
         }
     }
 
     fun updateUsernameLabel() {
         view?.run {
             setUsernameLabel(if ("standard" in formHostValue) emailLabel else nicknameLabel)
-        }
-    }
-
-    fun updateSymbolInputVisibility() {
-        view?.run {
-            showSymbol("adfs" in formHostValue)
         }
     }
 
@@ -72,45 +68,52 @@ class LoginFormPresenter @Inject constructor(
         view?.clearUsernameError()
     }
 
-    fun onSymbolTextChanged() {
-        view?.clearSymbolError()
-    }
-
     fun onSignInClick() {
         val email = view?.formUsernameValue.orEmpty().trim()
         val password = view?.formPassValue.orEmpty().trim()
         val host = view?.formHostValue.orEmpty().trim()
-        val symbol = view?.formSymbolValue.orEmpty().trim()
+        val symbol = view?.formHostSymbol.orEmpty().trim()
 
-        if (!validateCredentials(email, password, host, symbol)) return
+        if (!validateCredentials(email, password, host)) return
 
-        disposable.add(studentRepository.getStudentsScrapper(email, password, host, symbol)
-            .subscribeOn(schedulers.backgroundThread)
-            .observeOn(schedulers.mainThread)
-            .doOnSubscribe {
-                view?.apply {
+        flowWithResource { studentRepository.getStudentsScrapper(email, password, host, symbol) }.onEach {
+            when (it.status) {
+                Status.LOADING -> view?.run {
+                    Timber.i("Login started")
                     hideSoftKeyboard()
                     showProgress(true)
                     showContent(false)
                 }
-                Timber.i("Login started")
-            }
-            .doFinally {
-                view?.apply {
-                    showProgress(false)
-                    showContent(true)
+                Status.SUCCESS -> {
+                    Timber.i("Login result: Success")
+                    analytics.logEvent(
+                        "registration_form",
+                        "success" to true,
+                        "students" to it.data!!.size,
+                        "scrapperBaseUrl" to host,
+                        "error" to "No error"
+                    )
+                    view?.notifyParentAccountLogged(it.data, Triple(email, password, host))
+                }
+                Status.ERROR -> {
+                    Timber.i("Login result: An exception occurred")
+                    analytics.logEvent(
+                        "registration_form",
+                        "success" to false,
+                        "students" to -1,
+                        "scrapperBaseUrl" to host,
+                        "error" to it.error!!.message.ifNullOrBlank { "No message" })
+                    loginErrorHandler.dispatch(it.error)
+                    lastError = it.error
+                    view?.showContact(true)
                 }
             }
-            .subscribe({
-                Timber.i("Login result: Success")
-                analytics.logEvent("registration_form", "success" to true, "students" to it.size, "scrapperBaseUrl" to host, "error" to "No error")
-                view?.notifyParentAccountLogged(it, Triple(email, password, host))
-            }, {
-                Timber.i("Login result: An exception occurred")
-                analytics.logEvent("registration_form", "success" to false, "students" to -1, "scrapperBaseUrl" to host, "error" to it.message.ifNullOrBlank { "No message" })
-                loginErrorHandler.dispatch(it)
-                view?.showContact(true)
-            }))
+        }.afterLoading {
+            view?.apply {
+                showProgress(false)
+                showContent(true)
+            }
+        }.launch("login")
     }
 
     fun onFaqClick() {
@@ -118,19 +121,29 @@ class LoginFormPresenter @Inject constructor(
     }
 
     fun onEmailClick() {
-        view?.openEmail()
+        view?.openEmail(lastError?.message.ifNullOrBlank { "none" })
     }
 
     fun onRecoverClick() {
         view?.onRecoverClick()
     }
 
-    private fun validateCredentials(login: String, password: String, host: String, symbol: String): Boolean {
+    private fun validateCredentials(login: String, password: String, host: String): Boolean {
         var isCorrect = true
 
         if (login.isEmpty()) {
             view?.setErrorUsernameRequired()
             isCorrect = false
+        } else {
+            if ("@" in login && "standard" !in host) {
+                view?.setErrorLoginRequired()
+                isCorrect = false
+            }
+
+            if ("@" !in login && "standard" in host) {
+                view?.setErrorEmailRequired()
+                isCorrect = false
+            }
         }
 
         if (password.isEmpty()) {
@@ -140,11 +153,6 @@ class LoginFormPresenter @Inject constructor(
 
         if (password.length < 6 && password.isNotEmpty()) {
             view?.setErrorPassInvalid(focus = isCorrect)
-            isCorrect = false
-        }
-
-        if ("standard" !in host && symbol.isBlank()) {
-            view?.setErrorSymbolRequired(focus = isCorrect)
             isCorrect = false
         }
 

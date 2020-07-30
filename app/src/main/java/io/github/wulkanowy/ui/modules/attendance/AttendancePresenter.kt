@@ -1,7 +1,7 @@
 package io.github.wulkanowy.ui.modules.attendance
 
 import android.annotation.SuppressLint
-import eu.davidea.flexibleadapter.items.AbstractFlexibleItem
+import io.github.wulkanowy.data.Status
 import io.github.wulkanowy.data.db.entities.Attendance
 import io.github.wulkanowy.data.repositories.attendance.AttendanceRepository
 import io.github.wulkanowy.data.repositories.preferences.PreferencesRepository
@@ -10,29 +10,33 @@ import io.github.wulkanowy.data.repositories.student.StudentRepository
 import io.github.wulkanowy.ui.base.BasePresenter
 import io.github.wulkanowy.ui.base.ErrorHandler
 import io.github.wulkanowy.utils.FirebaseAnalyticsHelper
-import io.github.wulkanowy.utils.SchedulersProvider
+import io.github.wulkanowy.utils.afterLoading
+import io.github.wulkanowy.utils.flowWithResource
+import io.github.wulkanowy.utils.flowWithResourceIn
 import io.github.wulkanowy.utils.getLastSchoolDayIfHoliday
 import io.github.wulkanowy.utils.isHolidays
+import io.github.wulkanowy.utils.mapData
 import io.github.wulkanowy.utils.nextSchoolDay
 import io.github.wulkanowy.utils.previousOrSameSchoolDay
 import io.github.wulkanowy.utils.previousSchoolDay
 import io.github.wulkanowy.utils.toFormattedString
-import org.threeten.bp.LocalDate
-import org.threeten.bp.LocalDate.now
-import org.threeten.bp.LocalDate.ofEpochDay
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.onEach
 import timber.log.Timber
-import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.time.LocalDate
+import java.time.LocalDate.now
+import java.time.LocalDate.ofEpochDay
 import javax.inject.Inject
 
 class AttendancePresenter @Inject constructor(
-    schedulers: SchedulersProvider,
     errorHandler: ErrorHandler,
     studentRepository: StudentRepository,
     private val attendanceRepository: AttendanceRepository,
     private val semesterRepository: SemesterRepository,
     private val prefRepository: PreferencesRepository,
     private val analytics: FirebaseAnalyticsHelper
-) : BasePresenter<AttendanceView>(errorHandler, studentRepository, schedulers) {
+) : BasePresenter<AttendanceView>(errorHandler, studentRepository) {
 
     private var baseDate: LocalDate = now().previousOrSameSchoolDay
 
@@ -111,11 +115,11 @@ class AttendancePresenter @Inject constructor(
         view?.finishActionMode()
     }
 
-    fun onAttendanceItemSelected(item: AbstractFlexibleItem<*>?) {
+    fun onAttendanceItemSelected(attendance: Attendance) {
         view?.apply {
-            if (item is AttendanceItem && !excuseActionMode) {
-                Timber.i("Select attendance item ${item.attendance.id}")
-                showAttendanceDialog(item.attendance)
+            if (!excuseActionMode) {
+                Timber.i("Select attendance item ${attendance.id}")
+                showAttendanceDialog(attendance)
             }
         }
     }
@@ -169,94 +173,93 @@ class AttendancePresenter @Inject constructor(
     }
 
     private fun setBaseDateOnHolidays() {
-        disposable.add(studentRepository.getCurrentStudent()
-            .flatMap { semesterRepository.getCurrentSemester(it) }
-            .subscribeOn(schedulers.backgroundThread)
-            .observeOn(schedulers.mainThread)
-            .subscribe({
-                baseDate = baseDate.getLastSchoolDayIfHoliday(it.schoolYear)
-                currentDate = baseDate
-                reloadNavigation()
-            }) {
-                Timber.i("Loading semester result: An exception occurred")
-            })
+        flow {
+            val student = studentRepository.getCurrentStudent()
+            emit(semesterRepository.getCurrentSemester(student))
+        }.catch {
+            Timber.i("Loading semester result: An exception occurred")
+        }.onEach {
+            baseDate = baseDate.getLastSchoolDayIfHoliday(it.schoolYear)
+            currentDate = baseDate
+            reloadNavigation()
+        }.launch("holidays")
     }
 
     private fun loadData(date: LocalDate, forceRefresh: Boolean = false) {
         Timber.i("Loading attendance data started")
         currentDate = date
-        disposable.apply {
-            clear()
-            add(studentRepository.getCurrentStudent()
-                .delay(200, MILLISECONDS)
-                .flatMap { student ->
-                    semesterRepository.getCurrentSemester(student)
-                        .flatMap { semester -> attendanceRepository.getAttendance(semester, date, date, forceRefresh) }
-                        .map { list ->
-                            if (prefRepository.getShowPresent(student.studentId)) list
-                            else list.filter { item -> !item.presence }
-                        }
-                }
-                .map { items -> items.map { AttendanceItem(it) } }
-                .map { items -> items.sortedBy { it.attendance.number } }
-                .subscribeOn(schedulers.backgroundThread)
-                .observeOn(schedulers.mainThread)
-                .doFinally {
-                    view?.run {
-                        hideRefresh()
-                        showProgress(false)
-                        enableSwipe(true)
-                    }
-                }
-                .subscribe({
+
+        flowWithResourceIn {
+            val student = studentRepository.getCurrentStudent()
+            val semester = semesterRepository.getCurrentSemester(student)
+            attendanceRepository.getAttendance(student, semester, date, date, forceRefresh).mapData { items ->
+                if (prefRepository.getShowPresent(student.studentId)) items
+                else items.filter { item -> !item.presence }
+            }
+        }.onEach {
+            when (it.status) {
+                Status.LOADING -> view?.showExcuseButton(false)
+                Status.SUCCESS -> {
                     Timber.i("Loading attendance result: Success")
                     view?.apply {
-                        updateData(it)
-                        showEmpty(it.isEmpty())
+                        updateData(it.data!!.sortedBy { item -> item.number })
+                        showEmpty(it.data.isEmpty())
                         showErrorView(false)
-                        showContent(it.isNotEmpty())
-                        showExcuseButton(it.any { item -> item.attendance.excusable })
+                        showContent(it.data.isNotEmpty())
+                        showExcuseButton(it.data.any { item -> item.excusable })
                     }
-                    analytics.logEvent("load_attendance", "items" to it.size, "force_refresh" to forceRefresh)
-                }) {
-                    Timber.i("Loading attendance result: An exception occurred")
-                    errorHandler.dispatch(it)
+                    analytics.logEvent(
+                        "load_data",
+                        "type" to "attendance",
+                        "items" to it.data!!.size
+                    )
                 }
-            )
-        }
+                Status.ERROR -> {
+                    Timber.i("Loading attendance result: An exception occurred")
+                    errorHandler.dispatch(it.error!!)
+                }
+            }
+        }.afterLoading {
+            view?.run {
+                hideRefresh()
+                showProgress(false)
+                enableSwipe(true)
+            }
+        }.launch()
     }
 
     private fun excuseAbsence(reason: String?, toExcuseList: List<Attendance>) {
-        Timber.i("Excusing absence started")
-        disposable.apply {
-            add(studentRepository.getCurrentStudent()
-                .delay(200, MILLISECONDS)
-                .flatMap { semesterRepository.getCurrentSemester(it) }
-                .flatMap { attendanceRepository.excuseForAbsence(it, toExcuseList, reason) }
-                .subscribeOn(schedulers.backgroundThread)
-                .observeOn(schedulers.mainThread)
-                .doOnSubscribe {
-                    view?.apply {
-                        showProgress(true)
-                        showContent(false)
-                        showExcuseButton(false)
-                    }
+        flowWithResource {
+            val student = studentRepository.getCurrentStudent()
+            val semester = semesterRepository.getCurrentSemester(student)
+            attendanceRepository.excuseForAbsence(student, semester, toExcuseList, reason)
+        }.onEach {
+            when (it.status) {
+                Status.LOADING -> view?.run {
+                    Timber.i("Excusing absence started")
+                    showProgress(true)
+                    showContent(false)
+                    showExcuseButton(false)
                 }
-                .subscribe({
+                Status.SUCCESS -> {
                     Timber.i("Excusing for absence result: Success")
                     analytics.logEvent("excuse_absence", "items" to attendanceToExcuseList.size)
                     attendanceToExcuseList.clear()
-                    view?.apply {
+                    view?.run {
                         showExcuseButton(false)
                         showMessage(excuseSuccessString)
+                        showContent(true)
+                        showProgress(false)
                     }
-                    loadData(currentDate, true)
-                }) {
+                    loadData(currentDate, forceRefresh = true)
+                }
+                Status.ERROR -> {
                     Timber.i("Excusing for absence result: An exception occurred")
-                    view?.showProgress(false)
-                    errorHandler.dispatch(it)
-                })
-        }
+                    errorHandler.dispatch(it.error!!)
+                    loadData(currentDate)
+                }
+            }
+        }.launch("excuse")
     }
 
     private fun showErrorViewOnError(message: String, error: Throwable) {

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
 import io.github.wulkanowy.R
+import io.github.wulkanowy.ui.modules.grade.GradeAverageMode
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -17,14 +18,17 @@ class PreferencesRepository @Inject constructor(
     val startMenuIndex: Int
         get() = getString(R.string.pref_key_global_start_menu, R.string.pref_default_startup).toInt()
 
-    fun getShowPresent(studentId: Int) = getBooleanSetting(studentId, R.string.pref_key_user_attendance_present, R.bool.pref_default_attendance_present)
+    suspend fun getShowPresent(studentId: Int) = getBooleanSetting(studentId, R.string.pref_key_user_attendance_present, R.bool.pref_default_attendance_present)
 
-    fun getGradeAverageMode(studentId: Int) = getSetting(studentId, R.string.pref_key_user_grade_average_mode, R.string.pref_default_grade_average_mode)
+    suspend fun getGradeAverageMode(studentId: Int) = GradeAverageMode.getByValue(getSetting(studentId, R.string.pref_key_user_grade_average_mode, R.string.pref_default_grade_average_mode))
 
-    fun getGradeAverageForceCalc(studentId: Int) = getBooleanSetting(studentId, R.string.pref_key_user_grade_average_force_calc, R.bool.pref_default_grade_average_force_calc)
+    suspend fun getGradeAverageForceCalc(studentId: Int) = getBooleanSetting(studentId, R.string.pref_key_user_grade_average_force_calc, R.bool.pref_default_grade_average_force_calc)
 
     val isGradeExpandable: Boolean
         get() = !getBoolean(R.string.pref_key_global_expand_grade, R.bool.pref_default_expand_grade)
+
+    val showAllSubjectsOnStatisticsList: Boolean
+        get() = getBoolean(R.string.pref_key_grade_statistics_list, R.bool.pref_default_grade_statistics_list)
 
     val appThemeKey = context.getString(R.string.pref_key_global_app_theme)
     val appTheme: String
@@ -52,22 +56,29 @@ class PreferencesRepository @Inject constructor(
     val isNotificationsEnable: Boolean
         get() = getBoolean(R.string.pref_key_global_notifications_enable, R.bool.pref_default_notifications_enable)
 
+    val isUpcomingLessonsNotificationsEnableKey = context.getString(R.string.pref_key_notifications_upcoming_lessons_enable)
+    val isUpcomingLessonsNotificationsEnable: Boolean
+        get() = getBoolean(isUpcomingLessonsNotificationsEnableKey, R.bool.pref_default_notification_upcoming_lessons_enable)
+
     val isDebugNotificationEnableKey = context.getString(R.string.pref_key_global_notification_debug)
     val isDebugNotificationEnable: Boolean
         get() = getBoolean(isDebugNotificationEnableKey, R.bool.pref_default_notification_debug)
 
-    fun getGradePlusModifier(studentId: Int) = getSetting(studentId, R.string.pref_key_user_grade_modifier_plus, R.string.pref_default_grade_modifier_plus).toDouble()
+    suspend fun getGradePlusModifier(studentId: Int) = getSetting(studentId, R.string.pref_key_user_grade_modifier_plus, R.string.pref_default_grade_modifier_plus).toDouble()
 
-    fun getGradeMinusModifier(studentId: Int) = getSetting(studentId, R.string.pref_key_user_grade_modifier_minus, R.string.pref_default_grade_modifier_minus).toDouble()
+    suspend fun getGradeMinusModifier(studentId: Int) = getSetting(studentId, R.string.pref_key_user_grade_modifier_minus, R.string.pref_default_grade_modifier_minus).toDouble()
 
     val fillMessageContent: Boolean
         get() = getBoolean(R.string.pref_key_global_fill_message_content, R.bool.pref_default_fill_message_content)
 
-    fun isShowWholeClassPlan(studentId: Int) = getSetting(studentId, R.string.pref_key_user_timetable_show_whole_class, R.string.pref_default_timetable_show_whole_class)
+    suspend fun isShowWholeClassPlan(studentId: Int) = getSetting(studentId, R.string.pref_key_user_timetable_show_whole_class, R.string.pref_default_timetable_show_whole_class)
 
-    private fun getSetting(studentId: Int, key: Int, default: Int) = getSetting(studentId, context.getString(key)) ?: context.getString(default)
+    private suspend fun getSetting(studentId: Int, key: Int, default: Int) = getSetting(studentId, context.getString(key)) ?: context.getString(default)
 
-    private fun getBooleanSetting(studentId: Int, key: Int, default: Int) = getSetting(studentId, context.getString(key))?.toBoolean() ?: context.resources.getBoolean(default)
+    private suspend fun getBooleanSetting(studentId: Int, key: Int, default: Int) = getSetting(studentId, context.getString(key))?.toBoolean() ?: context.resources.getBoolean(default)
+
+    val showTimetableTimers: Boolean
+        get() = getBoolean(R.string.pref_key_timetable_show_timers, R.bool.pref_default_timetable_show_timers)
 
     private fun getString(id: Int, default: Int) = getString(context.getString(id), default)
 
@@ -85,7 +96,7 @@ class PreferencesRepository @Inject constructor(
 
     fun getLong(key: String, defValue: Long) = sharedPref.getLong(key, defValue)
 
-    fun getSetting(studentId: Int, key: String?) = local.getPreference(studentId, key.orEmpty())?.value
+    suspend fun getSetting(studentId: Int, key: String?) = local.getPreference(studentId, key.orEmpty())?.value
 
     fun <T> putValue(key: String, value: T) {
         sharedPref.edit(true) {
@@ -97,7 +108,7 @@ class PreferencesRepository @Inject constructor(
         }
     }
 
-    fun putSetting(studentId: Int, key: String?, value: Any?) {
+    suspend fun putSetting(studentId: Int, key: String?, value: Any?) {
         local.putPreference(studentId, key.orEmpty(), value.toString())
     }
 }

@@ -30,16 +30,16 @@
 -dontwarn javax.annotation.**
 
 
-#Config for ReactiveNetwork
--dontwarn com.github.pwittchen.reactivenetwork.library.rx2.ReactiveNetwork
--dontwarn io.reactivex.functions.Function
--dontwarn rx.internal.util.**
--dontwarn sun.misc.Unsafe
-
-
 #Config for MPAndroidChart
 -keep class com.github.mikephil.charting.** { *; }
 
 
 #Config for Material Components
 -keep class com.google.android.material.tabs.** { *; }
+
+
+#Config for About Libraries
+-keep class .R
+-keep class **.R$* {
+    <fields>;
+}

@@ -1,25 +1,31 @@
 package io.github.wulkanowy.data.repositories.attendance
 
 import io.github.wulkanowy.data.db.entities.Semester
+import io.github.wulkanowy.getStudentEntity
 import io.github.wulkanowy.sdk.Sdk
 import io.github.wulkanowy.sdk.pojo.Attendance
+import io.github.wulkanowy.utils.init
 import io.mockk.MockKAnnotations
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
-import io.reactivex.Single
+import io.mockk.impl.annotations.SpyK
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import org.threeten.bp.LocalDate
-import org.threeten.bp.LocalDate.of
+import java.time.LocalDate
+import java.time.LocalDate.of
 
 class AttendanceRemoteTest {
 
-    @MockK
-    private lateinit var mockSdk: Sdk
+    @SpyK
+    private var mockSdk = Sdk()
 
     @MockK
     private lateinit var semesterMock: Semester
+
+    private var student = getStudentEntity()
 
     @Before
     fun initApi() {
@@ -28,16 +34,17 @@ class AttendanceRemoteTest {
 
     @Test
     fun getAttendanceTest() {
-        every {
+        every { mockSdk.init(student) } returns mockSdk
+        coEvery {
             mockSdk.getAttendance(
                 of(2018, 9, 10),
                 of(2018, 9, 15),
                 1
             )
-        } returns Single.just(listOf(
+        } returns listOf(
             getAttendance(of(2018, 9, 10)),
             getAttendance(of(2018, 9, 17))
-        ))
+        )
 
         every { semesterMock.studentId } returns 1
         every { semesterMock.diaryId } returns 1
@@ -45,10 +52,12 @@ class AttendanceRemoteTest {
         every { semesterMock.semesterId } returns 1
         every { mockSdk.switchDiary(any(), any()) } returns mockSdk
 
-        val attendance = AttendanceRemote(mockSdk).getAttendance(semesterMock,
-            of(2018, 9, 10),
-            of(2018, 9, 15)
-        ).blockingGet()
+        val attendance = runBlocking {
+            AttendanceRemote(mockSdk).getAttendance(student, semesterMock,
+                of(2018, 9, 10),
+                of(2018, 9, 15)
+            )
+        }
         assertEquals(2, attendance.size)
     }
 

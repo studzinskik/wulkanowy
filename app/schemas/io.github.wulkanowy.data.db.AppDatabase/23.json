@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 23,
-    "identityHash": "67316477394e8bee54655c2be6fb0a91",
+    "identityHash": "f2505bf0c76c3ae4567856536d790909",
     "entities": [
       {
         "tableName": "Students",
@@ -1066,7 +1066,7 @@
       },
       {
         "tableName": "Notes",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `is_read` INTEGER NOT NULL, `is_notified` INTEGER NOT NULL, `student_id` INTEGER NOT NULL, `date` INTEGER NOT NULL, `teacher` TEXT NOT NULL, `category` TEXT NOT NULL, `content` TEXT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `is_read` INTEGER NOT NULL, `is_notified` INTEGER NOT NULL, `student_id` INTEGER NOT NULL, `date` INTEGER NOT NULL, `teacher` TEXT NOT NULL, `teacher_symbol` TEXT NOT NULL, `category` TEXT NOT NULL, `category_type` INTEGER NOT NULL, `is_points_show` INTEGER NOT NULL, `points` INTEGER NOT NULL, `content` TEXT NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -1105,9 +1105,33 @@
             "notNull": true
           },
           {
+            "fieldPath": "teacherSymbol",
+            "columnName": "teacher_symbol",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
             "fieldPath": "category",
             "columnName": "category",
             "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "categoryType",
+            "columnName": "category_type",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isPointsShow",
+            "columnName": "is_points_show",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "points",
+            "columnName": "points",
+            "affinity": "INTEGER",
             "notNull": true
           },
           {
@@ -1647,60 +1671,12 @@
         },
         "indices": [],
         "foreignKeys": []
-      },
-      {
-        "tableName": "Preferences",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `studentId` INTEGER NOT NULL, `key` TEXT NOT NULL, `value` TEXT NOT NULL)",
-        "fields": [
-          {
-            "fieldPath": "id",
-            "columnName": "id",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "studentId",
-            "columnName": "studentId",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "key",
-            "columnName": "key",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "value",
-            "columnName": "value",
-            "affinity": "TEXT",
-            "notNull": true
-          }
-        ],
-        "primaryKey": {
-          "columnNames": [
-            "id"
-          ],
-          "autoGenerate": true
-        },
-        "indices": [
-          {
-            "name": "index_Preferences_studentId_key",
-            "unique": true,
-            "columnNames": [
-              "studentId",
-              "key"
-            ],
-            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_Preferences_studentId_key` ON `${TABLE_NAME}` (`studentId`, `key`)"
-          }
-        ],
-        "foreignKeys": []
       }
     ],
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '67316477394e8bee54655c2be6fb0a91')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f2505bf0c76c3ae4567856536d790909')"
     ]
   }
 }

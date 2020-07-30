@@ -5,11 +5,9 @@ import android.content.Context
 import com.yariksoffice.lingver.Lingver
 import dagger.Module
 import dagger.Provides
-import eu.davidea.flexibleadapter.FlexibleAdapter
-import eu.davidea.flexibleadapter.items.AbstractFlexibleItem
 import io.github.wulkanowy.WulkanowyApp
 import io.github.wulkanowy.utils.AppInfo
-import io.github.wulkanowy.utils.SchedulersProvider
+import io.github.wulkanowy.utils.DispatchersProvider
 import javax.inject.Singleton
 
 @Module
@@ -21,10 +19,7 @@ internal class AppModule {
 
     @Singleton
     @Provides
-    fun provideSchedulersProvider() = SchedulersProvider()
-
-    @Provides
-    fun provideFlexibleAdapter() = FlexibleAdapter<AbstractFlexibleItem<*>>(null, null, true)
+    fun provideDispatchersProvider() = DispatchersProvider()
 
     @Singleton
     @Provides

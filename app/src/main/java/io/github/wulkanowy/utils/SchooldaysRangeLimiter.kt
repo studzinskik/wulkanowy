@@ -3,8 +3,8 @@ package io.github.wulkanowy.utils
 import android.os.Parcel
 import android.os.Parcelable
 import com.wdullaer.materialdatetimepicker.date.DateRangeLimiter
-import org.threeten.bp.DayOfWeek
-import org.threeten.bp.LocalDate
+import java.time.DayOfWeek
+import java.time.LocalDate
 import java.util.Calendar
 
 @Suppress("UNUSED_PARAMETER")
@@ -17,7 +17,7 @@ class SchooldaysRangeLimiter : DateRangeLimiter {
     override fun isOutOfRange(year: Int, month: Int, day: Int): Boolean {
         val date = LocalDate.of(year, month + 1, day)
         val dayOfWeek = date.dayOfWeek
-        return dayOfWeek == DayOfWeek.SUNDAY || dayOfWeek == DayOfWeek.SATURDAY || date.isHolidays
+        return dayOfWeek == DayOfWeek.SUNDAY || date.isHolidays
     }
 
     override fun getStartDate(): Calendar {

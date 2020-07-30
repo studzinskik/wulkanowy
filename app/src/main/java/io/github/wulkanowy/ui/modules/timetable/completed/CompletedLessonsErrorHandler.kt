@@ -1,15 +1,15 @@
 package io.github.wulkanowy.ui.modules.timetable.completed
 
 import android.content.res.Resources
-import com.readystatesoftware.chuck.api.ChuckCollector
-import io.github.wulkanowy.sdk.exception.FeatureDisabledException
+import com.chuckerteam.chucker.api.ChuckerCollector
+import io.github.wulkanowy.sdk.scrapper.exception.FeatureDisabledException
 import io.github.wulkanowy.ui.base.ErrorHandler
 import javax.inject.Inject
 
 class CompletedLessonsErrorHandler @Inject constructor(
     resources: Resources,
-    chuckCollector: ChuckCollector
-) : ErrorHandler(resources, chuckCollector) {
+    chuckerCollector: ChuckerCollector
+) : ErrorHandler(resources, chuckerCollector) {
 
     var onFeatureDisabled: () -> Unit = {}
 

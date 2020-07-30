@@ -1,6 +1,6 @@
 package io.github.wulkanowy.ui.modules.timetablewidget
 
-import eu.davidea.flexibleadapter.items.AbstractFlexibleItem
+import io.github.wulkanowy.data.Status
 import io.github.wulkanowy.data.db.SharedPrefProvider
 import io.github.wulkanowy.data.db.entities.Student
 import io.github.wulkanowy.data.repositories.student.StudentRepository
@@ -8,15 +8,16 @@ import io.github.wulkanowy.ui.base.BasePresenter
 import io.github.wulkanowy.ui.base.ErrorHandler
 import io.github.wulkanowy.ui.modules.timetablewidget.TimetableWidgetProvider.Companion.getStudentWidgetKey
 import io.github.wulkanowy.ui.modules.timetablewidget.TimetableWidgetProvider.Companion.getThemeWidgetKey
-import io.github.wulkanowy.utils.SchedulersProvider
+import io.github.wulkanowy.utils.flowWithResource
+import kotlinx.coroutines.flow.onEach
+import timber.log.Timber
 import javax.inject.Inject
 
 class TimetableWidgetConfigurePresenter @Inject constructor(
-    schedulers: SchedulersProvider,
     errorHandler: ErrorHandler,
     studentRepository: StudentRepository,
     private val sharedPref: SharedPrefProvider
-) : BasePresenter<TimetableWidgetConfigureView>(errorHandler, studentRepository, schedulers) {
+) : BasePresenter<TimetableWidgetConfigureView>(errorHandler, studentRepository) {
 
     private var appWidgetId: Int? = null
 
@@ -32,13 +33,11 @@ class TimetableWidgetConfigurePresenter @Inject constructor(
         loadData()
     }
 
-    fun onItemSelect(item: AbstractFlexibleItem<*>) {
-        if (item is TimetableWidgetConfigureItem) {
-            selectedStudent = item.student
+    fun onItemSelect(student: Student) {
+        selectedStudent = student
 
-            if (isFromProvider) registerStudent(selectedStudent)
-            else view?.showThemeDialog()
-        }
+        if (isFromProvider) registerStudent(selectedStudent)
+        else view?.showThemeDialog()
     }
 
     fun onThemeSelect(index: Int) {
@@ -48,28 +47,30 @@ class TimetableWidgetConfigurePresenter @Inject constructor(
         registerStudent(selectedStudent)
     }
 
-    fun onDismissThemeView(){
+    fun onDismissThemeView() {
         view?.finishView()
     }
 
     private fun loadData() {
-        disposable.add(studentRepository.getSavedStudents(false)
-            .map { it to appWidgetId?.let { id -> sharedPref.getLong(getStudentWidgetKey(id), 0) } }
-            .map { (students, currentStudentId) ->
-                students.map { student -> TimetableWidgetConfigureItem(student, student.id == currentStudentId) }
-            }
-            .subscribeOn(schedulers.backgroundThread)
-            .observeOn(schedulers.mainThread)
-            .subscribe({
-                when {
-                    it.isEmpty() -> view?.openLoginView()
-                    it.size == 1 && !isFromProvider -> {
-                        selectedStudent = it.single().student
-                        view?.showThemeDialog()
+        flowWithResource { studentRepository.getSavedStudents(false) }.onEach {
+            when (it.status) {
+                Status.LOADING -> Timber.d("Timetable widget configure students data load")
+                Status.SUCCESS -> {
+                    val widgetId = appWidgetId?.let { id -> sharedPref.getLong(getStudentWidgetKey(id), 0) }
+                    when {
+                        it.data!!.isEmpty() -> view?.openLoginView()
+                        it.data.size == 1 && !isFromProvider -> {
+                            selectedStudent = it.data.single()
+                            view?.showThemeDialog()
+                        }
+                        else -> view?.updateData(it.data.map { student ->
+                            student to (student.id == widgetId)
+                        })
                     }
-                    else -> view?.updateData(it)
                 }
-            }, { errorHandler.dispatch(it) }))
+                Status.ERROR -> errorHandler.dispatch(it.error!!)
+            }
+        }.launch()
     }
 
     private fun registerStudent(student: Student?) {

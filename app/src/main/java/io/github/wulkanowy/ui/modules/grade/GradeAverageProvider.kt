@@ -1,69 +1,135 @@
 package io.github.wulkanowy.ui.modules.grade
 
+import io.github.wulkanowy.data.Resource
+import io.github.wulkanowy.data.Status
+import io.github.wulkanowy.data.db.entities.Grade
+import io.github.wulkanowy.data.db.entities.GradeSummary
 import io.github.wulkanowy.data.db.entities.Semester
 import io.github.wulkanowy.data.db.entities.Student
 import io.github.wulkanowy.data.repositories.grade.GradeRepository
-import io.github.wulkanowy.data.repositories.gradessummary.GradeSummaryRepository
 import io.github.wulkanowy.data.repositories.preferences.PreferencesRepository
+import io.github.wulkanowy.data.repositories.semester.SemesterRepository
 import io.github.wulkanowy.sdk.Sdk
+import io.github.wulkanowy.ui.modules.grade.GradeAverageMode.ALL_YEAR
+import io.github.wulkanowy.ui.modules.grade.GradeAverageMode.BOTH_SEMESTERS
+import io.github.wulkanowy.ui.modules.grade.GradeAverageMode.ONE_SEMESTER
 import io.github.wulkanowy.utils.calcAverage
 import io.github.wulkanowy.utils.changeModifier
-import io.reactivex.Maybe
-import io.reactivex.Single
+import io.github.wulkanowy.utils.flowWithResourceIn
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
+@OptIn(FlowPreview::class)
 class GradeAverageProvider @Inject constructor(
-    private val pref: PreferencesRepository,
+    private val semesterRepository: SemesterRepository,
     private val gradeRepository: GradeRepository,
-    private val gradeSummaryRepository: GradeSummaryRepository
+    private val preferencesRepository: PreferencesRepository
 ) {
 
-    fun getGradeAverage(student: Student, semesters: List<Semester>, selectedSemesterId: Int, forceRefresh: Boolean): Single<List<Triple<String, Double, String>>> {
-        return when (pref.getGradeAverageMode(student.studentId)) {
-            "all_year" -> getAllYearAverage(student, semesters, selectedSemesterId, forceRefresh)
-            "only_one_semester" -> getOnlyOneSemesterAverage(student, semesters, selectedSemesterId, forceRefresh)
-            else -> throw IllegalArgumentException("Incorrect grade average mode: ${pref.getGradeAverageMode(student.studentId)} ")
-        }
-    }
+    fun getGradesDetailsWithAverage(student: Student, semesterId: Int, forceRefresh: Boolean) = flowWithResourceIn {
+        val semesters = semesterRepository.getSemesters(student)
 
-    private fun getAllYearAverage(student: Student, semesters: List<Semester>, semesterId: Int, forceRefresh: Boolean): Single<List<Triple<String, Double, String>>> {
+        when (preferencesRepository.getGradeAverageMode(student.studentId)) {
+            ONE_SEMESTER -> getSemesterDetailsWithAverage(student, semesters.single { it.semesterId == semesterId }, forceRefresh)
+            BOTH_SEMESTERS -> calculateBothSemestersAverage(student, semesters, semesterId, forceRefresh)
+            ALL_YEAR -> calculateAllYearAverage(student, semesters, semesterId, forceRefresh)
+        }
+    }.distinctUntilChanged()
+
+    private fun calculateBothSemestersAverage(student: Student, semesters: List<Semester>, semesterId: Int, forceRefresh: Boolean): Flow<Resource<List<GradeDetailsWithAverage>>> {
         val selectedSemester = semesters.single { it.semesterId == semesterId }
         val firstSemester = semesters.single { it.diaryId == selectedSemester.diaryId && it.semesterName == 1 }
 
-        return getAverageFromGradeSummary(selectedSemester, forceRefresh)
-            .switchIfEmpty(gradeRepository.getGrades(student, selectedSemester, forceRefresh)
-                .flatMap { firstGrades ->
-                    if (selectedSemester == firstSemester) Single.just(firstGrades)
-                    else {
-                        gradeRepository.getGrades(student, firstSemester)
-                            .map { secondGrades -> secondGrades + firstGrades }
-                    }
-                }.map { grades ->
-                    grades.map { if (student.loginMode == Sdk.Mode.SCRAPPER.name) it.changeModifier(pref.getGradePlusModifier(student.studentId), pref.getGradeMinusModifier(student.studentId)) else it }
-                        .groupBy { it.subject }
-                        .map { Triple(it.key, it.value.calcAverage(), "") }
-                })
+        return getSemesterDetailsWithAverage(student, selectedSemester, forceRefresh).flatMapConcat { selectedDetails ->
+            val isAnyAverage = selectedDetails.data.orEmpty().any { it.average != .0 }
+
+            if (selectedSemester != firstSemester) {
+                getSemesterDetailsWithAverage(student, firstSemester, forceRefresh).map { secondDetails ->
+                    secondDetails.copy(data = selectedDetails.data?.map { selected ->
+                        val second = secondDetails.data.orEmpty().singleOrNull { it.subject == selected.subject }
+                        selected.copy(average = if (!isAnyAverage || preferencesRepository.getGradeAverageForceCalc(student.studentId)) {
+                            val selectedGrades = selected.grades.updateModifiers(student).calcAverage()
+                            (selectedGrades + (second?.grades?.updateModifiers(student)?.calcAverage() ?: selectedGrades)) / 2
+                        } else (selected.average + (second?.average ?: selected.average)) / 2)
+                    })
+                }.filter { it.status != Status.LOADING }.filter { it.data != null }
+            } else flowOf(selectedDetails)
+        }
     }
 
-    private fun getOnlyOneSemesterAverage(student: Student, semesters: List<Semester>, semesterId: Int, forceRefresh: Boolean): Single<List<Triple<String, Double, String>>> {
+    private fun calculateAllYearAverage(student: Student, semesters: List<Semester>, semesterId: Int, forceRefresh: Boolean): Flow<Resource<List<GradeDetailsWithAverage>>> {
         val selectedSemester = semesters.single { it.semesterId == semesterId }
+        val firstSemester = semesters.single { it.diaryId == selectedSemester.diaryId && it.semesterName == 1 }
 
-        return getAverageFromGradeSummary(selectedSemester, forceRefresh)
-            .switchIfEmpty(gradeRepository.getGrades(student, selectedSemester, forceRefresh)
-                .map { grades ->
-                    grades.map { if (student.loginMode == Sdk.Mode.SCRAPPER.name) it.changeModifier(pref.getGradePlusModifier(student.studentId), pref.getGradeMinusModifier(student.studentId)) else it }
-                        .groupBy { it.subject }
-                        .map { Triple(it.key, it.value.calcAverage(), "") }
-                })
+        return getSemesterDetailsWithAverage(student, selectedSemester, forceRefresh).flatMapConcat { selectedDetails ->
+            val isAnyAverage = selectedDetails.data.orEmpty().any { it.average != .0 }
+
+            if (selectedSemester != firstSemester) {
+                getSemesterDetailsWithAverage(student, firstSemester, forceRefresh).map { secondDetails ->
+                    secondDetails.copy(data = selectedDetails.data?.map { selected ->
+                        val second = secondDetails.data.orEmpty().singleOrNull { it.subject == selected.subject }
+                        selected.copy(average = if (!isAnyAverage || preferencesRepository.getGradeAverageForceCalc(student.studentId)) {
+                            (selected.grades.updateModifiers(student) + second?.grades?.updateModifiers(student).orEmpty()).calcAverage()
+                        } else selected.average)
+                    })
+                }.filter { it.status != Status.LOADING }.filter { it.data != null }
+            } else flowOf(selectedDetails)
+        }
     }
 
-    private fun getAverageFromGradeSummary(selectedSemester: Semester, forceRefresh: Boolean): Maybe<List<Triple<String, Double, String>>> {
-        return gradeSummaryRepository.getGradesSummary(selectedSemester, forceRefresh)
-            .toMaybe()
-            .flatMap {
-                if (it.any { summary -> summary.average != .0 }) {
-                    Maybe.just(it.map { summary -> Triple(summary.subject, summary.average, summary.pointsSum) })
-                } else Maybe.empty()
-            }.filter { !pref.getGradeAverageForceCalc(selectedSemester.studentId) }
+    private fun getSemesterDetailsWithAverage(student: Student, semester: Semester, forceRefresh: Boolean): Flow<Resource<List<GradeDetailsWithAverage>>> {
+        return gradeRepository.getGrades(student, semester, forceRefresh = forceRefresh).map { res ->
+            val (details, summaries) = res.data ?: null to null
+            val isAnyAverage = summaries.orEmpty().any { it.average != .0 }
+            val allGrades = details.orEmpty().groupBy { it.subject }
+
+            Resource(res.status, summaries?.emulateEmptySummaries(student, semester, allGrades.toList(), isAnyAverage)?.map { summary ->
+                val grades = allGrades[summary.subject].orEmpty()
+                GradeDetailsWithAverage(
+                    subject = summary.subject,
+                    average = if (!isAnyAverage || preferencesRepository.getGradeAverageForceCalc(student.studentId)) {
+                        grades.updateModifiers(student).calcAverage()
+                    } else summary.average,
+                    points = summary.pointsSum,
+                    summary = summary,
+                    grades = grades
+                )
+            }, res.error)
+        }
+    }
+
+    private suspend fun List<GradeSummary>.emulateEmptySummaries(student: Student, semester: Semester, grades: List<Pair<String, List<Grade>>>, calcAverage: Boolean): List<GradeSummary> {
+        if (isNotEmpty() && size > grades.size) return this
+
+        return grades.mapIndexed { i, (subject, details) ->
+            singleOrNull { it.subject == subject }?.let { return@mapIndexed it }
+            GradeSummary(
+                studentId = student.studentId,
+                semesterId = semester.semesterId,
+                position = i,
+                subject = subject,
+                predictedGrade = "",
+                finalGrade = "",
+                proposedPoints = "",
+                finalPoints = "",
+                pointsSum = "",
+                average = if (calcAverage) details.updateModifiers(student).calcAverage() else .0
+            )
+        }
+    }
+
+    private suspend fun List<Grade>.updateModifiers(student: Student): List<Grade> {
+        return if (student.loginMode == Sdk.Mode.SCRAPPER.name) map {
+            it.changeModifier(
+                plusModifier = preferencesRepository.getGradePlusModifier(student.studentId),
+                minusModifier = preferencesRepository.getGradeMinusModifier(student.studentId)
+            )
+        } else this
     }
 }

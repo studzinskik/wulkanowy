@@ -6,7 +6,7 @@ interface AccountView : BaseView {
 
     fun initView()
 
-    fun updateData(data: List<AccountItem>)
+    fun updateData(data: List<AccountItem<*>>)
 
     fun dismissView()
 

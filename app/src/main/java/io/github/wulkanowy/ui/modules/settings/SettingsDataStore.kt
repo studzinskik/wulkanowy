@@ -5,24 +5,22 @@ import androidx.preference.PreferenceDataStore
 import io.github.wulkanowy.R
 import io.github.wulkanowy.data.repositories.preferences.PreferencesRepository
 import io.github.wulkanowy.data.repositories.student.StudentRepository
-import io.github.wulkanowy.utils.SchedulersProvider
-import io.reactivex.Completable
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import timber.log.Timber
-import java.util.concurrent.Callable
-import java.util.concurrent.Executors
 import javax.inject.Inject
 
 class SettingsDataStore @Inject constructor(
     context: Context,
     studentRepository: StudentRepository,
-    private val schedulersProvider: SchedulersProvider,
     private val preferencesRepository: PreferencesRepository
 ) : PreferenceDataStore() {
 
     var onChangeCallback: (String) -> Unit = {}
 
     val studentId by lazy {
-        studentRepository.getCurrentStudent(false).blockingGet().studentId
+        runBlocking { studentRepository.getCurrentStudent(false).studentId }
     }
 
     private val globalSettings = listOf(
@@ -74,10 +72,10 @@ class SettingsDataStore @Inject constructor(
     private fun getUserValue(key: String): String? {
         Timber.v("getUserValue($key)")
 
-        return Executors.newSingleThreadExecutor().submit(Callable {
+        return runBlocking {
             Timber.v(" for $studentId")
             preferencesRepository.getSetting(studentId, key)
-        }).get()
+        }
     }
 
     override fun putString(key: String, value: String?) = putValue(key, value)
@@ -90,9 +88,9 @@ class SettingsDataStore @Inject constructor(
 
         when (key) {
             in globalSettings -> preferencesRepository.putValue(key, value)
-            else -> Completable.create {
+            else -> GlobalScope.launch {
                 preferencesRepository.putSetting(studentId, key, value)
-            }.subscribeOn(schedulersProvider.backgroundThread).subscribe()
+            }
         }
         onChangeCallback(key)
     }

@@ -4,9 +4,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.threeten.bp.LocalDate.of
-import org.threeten.bp.LocalDateTime
-import org.threeten.bp.Month.JANUARY
+import java.time.LocalDate.of
+import java.time.LocalDateTime
+import java.time.Month.JANUARY
 import java.util.Locale
 
 class TimeExtensionTest {
@@ -38,12 +38,12 @@ class TimeExtensionTest {
     }
 
     @Test
-    fun fridayTest() {
-        assertEquals(of(2018, 10, 5), of(2018, 10, 2).friday)
-        assertEquals(of(2018, 10, 5), of(2018, 10, 5).friday)
-        assertEquals(of(2018, 10, 5), of(2018, 10, 6).friday)
-        assertEquals(of(2018, 10, 5), of(2018, 10, 7).friday)
-        assertEquals(of(2018, 10, 12), of(2018, 10, 8).friday)
+    fun sundayTestTest() {
+        assertEquals(of(2018, 10, 7), of(2018, 10, 2).sunday)
+        assertEquals(of(2018, 10, 7), of(2018, 10, 5).sunday)
+        assertEquals(of(2018, 10, 7), of(2018, 10, 6).sunday)
+        assertEquals(of(2018, 10, 7), of(2018, 10, 7).sunday)
+        assertEquals(of(2018, 10, 14), of(2018, 10, 8).sunday)
     }
 
     @Test

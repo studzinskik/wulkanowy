@@ -1,29 +1,45 @@
 package io.github.wulkanowy.ui.modules.message.preview
 
-import android.annotation.SuppressLint
+import android.os.Build
 import android.os.Bundle
-import android.view.LayoutInflater
+import android.print.PrintAttributes
+import android.print.PrintManager
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.View.GONE
 import android.view.View.VISIBLE
-import android.view.ViewGroup
+import android.webkit.WebResourceRequest
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.annotation.RequiresApi
+import androidx.core.content.getSystemService
+import androidx.recyclerview.widget.LinearLayoutManager
 import io.github.wulkanowy.R
 import io.github.wulkanowy.data.db.entities.Message
+import io.github.wulkanowy.data.db.entities.MessageWithAttachment
+import io.github.wulkanowy.databinding.FragmentMessagePreviewBinding
 import io.github.wulkanowy.ui.base.BaseFragment
 import io.github.wulkanowy.ui.modules.main.MainActivity
 import io.github.wulkanowy.ui.modules.main.MainView
-import io.github.wulkanowy.ui.modules.message.MessageFragment
 import io.github.wulkanowy.ui.modules.message.send.SendMessageActivity
-import kotlinx.android.synthetic.main.fragment_message_preview.*
+import io.github.wulkanowy.utils.AppInfo
+import io.github.wulkanowy.utils.shareText
 import javax.inject.Inject
 
-class MessagePreviewFragment : BaseFragment(), MessagePreviewView, MainView.TitledView {
+class MessagePreviewFragment :
+    BaseFragment<FragmentMessagePreviewBinding>(R.layout.fragment_message_preview),
+    MessagePreviewView, MainView.TitledView {
 
     @Inject
     lateinit var presenter: MessagePreviewPresenter
+
+    @Inject
+    lateinit var previewAdapter: MessagePreviewAdapter
+
+    @Inject
+    lateinit var appInfo: AppInfo
 
     private var menuReplyButton: MenuItem? = null
 
@@ -31,21 +47,28 @@ class MessagePreviewFragment : BaseFragment(), MessagePreviewView, MainView.Titl
 
     private var menuDeleteButton: MenuItem? = null
 
+    private var menuShareButton: MenuItem? = null
+
+    private var menuPrintButton: MenuItem? = null
+
     override val titleStringId: Int
         get() = R.string.message_title
-
-    override val noSubjectString: String
-        get() = getString(R.string.message_no_subject)
 
     override val deleteMessageSuccessString: String
         get() = getString(R.string.message_delete_success)
 
+    override val messageNoSubjectString: String
+        get() = getString(R.string.message_no_subject)
+
+    override val printHTML: String
+        get() = requireContext().assets.open("message-print-page.html").bufferedReader().use { it.readText() }
+
     companion object {
         const val MESSAGE_ID_KEY = "message_id"
 
-        fun newInstance(messageId: Long): MessagePreviewFragment {
+        fun newInstance(message: Message): MessagePreviewFragment {
             return MessagePreviewFragment().apply {
-                arguments = Bundle().apply { putLong(MESSAGE_ID_KEY, messageId) }
+                arguments = Bundle().apply { putSerializable(MESSAGE_ID_KEY, message) }
             }
         }
     }
@@ -55,18 +78,20 @@ class MessagePreviewFragment : BaseFragment(), MessagePreviewView, MainView.Titl
         setHasOptionsMenu(true)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.fragment_message_preview, container, false)
-    }
-
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
-        messageContainer = messagePreviewContainer
-        presenter.onAttachView(this, (savedInstanceState ?: arguments)?.getLong(MESSAGE_ID_KEY) ?: 0L)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        binding = FragmentMessagePreviewBinding.bind(view)
+        messageContainer = binding.messagePreviewContainer
+        presenter.onAttachView(this, (savedInstanceState ?: arguments)?.getSerializable(MESSAGE_ID_KEY) as? Message)
     }
 
     override fun initView() {
-        messagePreviewErrorDetails.setOnClickListener { presenter.onDetailsClick() }
+        binding.messagePreviewErrorDetails.setOnClickListener { presenter.onDetailsClick() }
+
+        with(binding.messagePreviewRecycler) {
+            layoutManager = LinearLayoutManager(context)
+            adapter = previewAdapter
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -74,6 +99,8 @@ class MessagePreviewFragment : BaseFragment(), MessagePreviewView, MainView.Titl
         menuReplyButton = menu.findItem(R.id.messagePreviewMenuReply)
         menuForwardButton = menu.findItem(R.id.messagePreviewMenuForward)
         menuDeleteButton = menu.findItem(R.id.messagePreviewMenuDelete)
+        menuShareButton = menu.findItem(R.id.messagePreviewMenuShare)
+        menuPrintButton = menu.findItem(R.id.messagePreviewMenuPrint)
         presenter.onCreateOptionsMenu()
     }
 
@@ -82,44 +109,33 @@ class MessagePreviewFragment : BaseFragment(), MessagePreviewView, MainView.Titl
             R.id.messagePreviewMenuReply -> presenter.onReply()
             R.id.messagePreviewMenuForward -> presenter.onForward()
             R.id.messagePreviewMenuDelete -> presenter.onMessageDelete()
+            R.id.messagePreviewMenuShare -> presenter.onShare()
+            R.id.messagePreviewMenuPrint -> presenter.onPrint()
             else -> false
         }
     }
 
-    override fun setSubject(subject: String) {
-        messagePreviewSubject.text = subject
-    }
-
-    @SuppressLint("SetTextI18n")
-    override fun setRecipient(recipient: String) {
-        messagePreviewAuthor.text = "${getString(R.string.message_to)} $recipient"
-    }
-
-    @SuppressLint("SetTextI18n")
-    override fun setSender(sender: String) {
-        messagePreviewAuthor.text = "${getString(R.string.message_from)} $sender"
-    }
-
-    override fun setDate(date: String) {
-        messagePreviewDate.text = getString(R.string.message_date, date)
-    }
-
-    override fun setContent(content: String) {
-        messagePreviewContent.text = content
+    override fun setMessageWithAttachment(item: MessageWithAttachment) {
+        with(previewAdapter) {
+            messageWithAttachment = item
+            notifyDataSetChanged()
+        }
     }
 
     override fun showProgress(show: Boolean) {
-        messagePreviewProgress.visibility = if (show) VISIBLE else GONE
+        binding.messagePreviewProgress.visibility = if (show) VISIBLE else GONE
     }
 
     override fun showContent(show: Boolean) {
-        messagePreviewContentContainer.visibility = if (show) VISIBLE else GONE
+        binding.messagePreviewRecycler.visibility = if (show) VISIBLE else GONE
     }
 
     override fun showOptions(show: Boolean) {
         menuReplyButton?.isVisible = show
         menuForwardButton?.isVisible = show
         menuDeleteButton?.isVisible = show
+        menuShareButton?.isVisible = show
+        menuPrintButton?.isVisible = show && appInfo.systemVersion >= Build.VERSION_CODES.LOLLIPOP
     }
 
     override fun setDeletedOptionsLabels() {
@@ -131,15 +147,15 @@ class MessagePreviewFragment : BaseFragment(), MessagePreviewView, MainView.Titl
     }
 
     override fun showErrorView(show: Boolean) {
-        messagePreviewError.visibility = if (show) VISIBLE else GONE
+        binding.messagePreviewError.visibility = if (show) VISIBLE else GONE
     }
 
     override fun setErrorDetails(message: String) {
-        messagePreviewErrorMessage.text = message
+        binding.messagePreviewErrorMessage.text = message
     }
 
     override fun setErrorRetryCallback(callback: () -> Unit) {
-        messagePreviewErrorRetry.setOnClickListener { callback() }
+        binding.messagePreviewErrorRetry.setOnClickListener { callback() }
     }
 
     override fun openMessageReply(message: Message?) {
@@ -150,17 +166,45 @@ class MessagePreviewFragment : BaseFragment(), MessagePreviewView, MainView.Titl
         context?.let { it.startActivity(SendMessageActivity.getStartIntent(it, message)) }
     }
 
+    override fun shareText(text: String, subject: String) {
+        context?.shareText(text, subject)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+    override fun printDocument(html: String, jobName: String) {
+        val webView = WebView(activity)
+        webView.webViewClient = object : WebViewClient() {
+
+            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest) = false
+
+            override fun onPageFinished(view: WebView, url: String) {
+                createWebPrintJob(view, jobName)
+            }
+        }
+
+        webView.loadDataWithBaseURL("file:///android_asset/", html, "text/HTML", "UTF-8", null)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+    private fun createWebPrintJob(webView: WebView, jobName: String) {
+        activity?.getSystemService<PrintManager>()?.let { printManager ->
+            val printAdapter = webView.createPrintDocumentAdapter(jobName)
+
+            printManager.print(
+                jobName,
+                printAdapter,
+                PrintAttributes.Builder().build()
+            )
+        }
+    }
+
     override fun popView() {
         (activity as MainActivity).popView()
     }
 
-    override fun notifyParentMessageDeleted(message: Message) {
-        parentFragmentManager.fragments.forEach { if (it is MessageFragment) it.onDeleteMessage(message) }
-    }
-
     override fun onSaveInstanceState(outState: Bundle) {
+        outState.putSerializable(MESSAGE_ID_KEY, presenter.message)
         super.onSaveInstanceState(outState)
-        outState.putLong(MESSAGE_ID_KEY, presenter.messageId)
     }
 
     override fun onDestroyView() {

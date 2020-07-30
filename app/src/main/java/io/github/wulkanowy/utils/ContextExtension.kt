@@ -9,6 +9,8 @@ import androidx.annotation.ColorInt
 import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
+import io.github.wulkanowy.BuildConfig.APPLICATION_ID
 
 @ColorInt
 fun Context.getThemeAttrColor(@AttrRes colorAttr: Int): Int {
@@ -18,6 +20,11 @@ fun Context.getThemeAttrColor(@AttrRes colorAttr: Int): Int {
     } finally {
         array.recycle()
     }
+}
+
+@ColorInt
+fun Context.getThemeAttrColor(@AttrRes colorAttr: Int, alpha: Int): Int {
+    return ColorUtils.setAlphaComponent(getThemeAttrColor(colorAttr), alpha)
 }
 
 @ColorInt
@@ -32,12 +39,22 @@ fun Context.openInternetBrowser(uri: String, onActivityNotFound: (uri: String) -
     }
 }
 
-fun Context.openEmailClient(chooserTitle: String, email: String, subject: String?, body: String?) {
-    val emailIntent = Intent(Intent.ACTION_SENDTO, Uri.fromParts("mailto", email, null))
-    emailIntent.putExtra(Intent.EXTRA_EMAIL, arrayOf(email))
-    if (subject != null) emailIntent.putExtra(Intent.EXTRA_SUBJECT, subject)
-    if (body != null) emailIntent.putExtra(Intent.EXTRA_TEXT, body)
-    startActivity(Intent.createChooser(emailIntent, chooserTitle))
+fun Context.openAppInMarket(onActivityNotFound: (uri: String) -> Unit) {
+    openInternetBrowser("market://details?id=${APPLICATION_ID}") {
+        openInternetBrowser("https://github.com/wulkanowy/wulkanowy/releases", onActivityNotFound)
+    }
+}
+
+fun Context.openEmailClient(chooserTitle: String, email: String, subject: String, body: String, onActivityNotFound: () -> Unit = {}) {
+    val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:")).apply {
+        putExtra(Intent.EXTRA_EMAIL, arrayOf(email))
+        putExtra(Intent.EXTRA_SUBJECT, subject)
+        putExtra(Intent.EXTRA_TEXT, body)
+    }
+
+    if (intent.resolveActivity(packageManager) != null) {
+        startActivity(Intent.createChooser(intent, chooserTitle))
+    } else onActivityNotFound()
 }
 
 fun Context.openNavigation(location: String) {
@@ -52,6 +69,19 @@ fun Context.openDialer(phone: String) {
     val intentUri = Uri.parse("tel:$phone")
     val intent = Intent(Intent.ACTION_DIAL, intentUri)
     startActivity(intent)
+}
+
+fun Context.shareText(text: String, subject: String?) {
+    val sendIntent: Intent = Intent().apply {
+        action = Intent.ACTION_SEND
+        putExtra(Intent.EXTRA_TEXT, text)
+        if (subject != null) {
+            putExtra(Intent.EXTRA_SUBJECT, subject)
+        }
+        type = "text/plain"
+    }
+    val shareIntent = Intent.createChooser(sendIntent, null)
+    startActivity(shareIntent)
 }
 
 fun Context.dpToPx(dp: Float) = dp * resources.displayMetrics.densityDpi / DENSITY_DEFAULT

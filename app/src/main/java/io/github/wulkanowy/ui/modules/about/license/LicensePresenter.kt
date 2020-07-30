@@ -1,18 +1,23 @@
 package io.github.wulkanowy.ui.modules.about.license
 
-import eu.davidea.flexibleadapter.items.AbstractFlexibleItem
+import com.mikepenz.aboutlibraries.entity.Library
+import io.github.wulkanowy.data.Status
 import io.github.wulkanowy.data.repositories.student.StudentRepository
 import io.github.wulkanowy.ui.base.BasePresenter
 import io.github.wulkanowy.ui.base.ErrorHandler
-import io.github.wulkanowy.utils.SchedulersProvider
-import io.reactivex.Single
+import io.github.wulkanowy.utils.DispatchersProvider
+import io.github.wulkanowy.utils.afterLoading
+import io.github.wulkanowy.utils.flowWithResource
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.withContext
+import timber.log.Timber
 import javax.inject.Inject
 
 class LicensePresenter @Inject constructor(
-    schedulers: SchedulersProvider,
+    private val dispatchers: DispatchersProvider,
     errorHandler: ErrorHandler,
     studentRepository: StudentRepository
-) : BasePresenter<LicenseView>(errorHandler, studentRepository, schedulers) {
+) : BasePresenter<LicenseView>(errorHandler, studentRepository) {
 
     override fun onAttachView(view: LicenseView) {
         super.onAttachView(view)
@@ -20,21 +25,23 @@ class LicensePresenter @Inject constructor(
         loadData()
     }
 
-    fun onItemSelected(item: AbstractFlexibleItem<*>) {
-        if (item !is LicenseItem) return
-        view?.run { item.library.license?.licenseDescription?.let { openLicense(it) } }
+    fun onItemSelected(library: Library) {
+        view?.run { library.licenses?.firstOrNull()?.licenseDescription?.let { openLicense(it) } }
     }
 
     private fun loadData() {
-        disposable.add(Single.fromCallable { view?.appLibraries }
-            .map {
-                val exclude = listOf("Android-Iconics", "CircleImageView", "FastAdapter", "Jsoup", "okio", "Retrofit")
-                it.filter { library -> !exclude.contains(library.libraryName) }
+        flowWithResource {
+            withContext(dispatchers.backgroundThread) {
+                view?.appLibraries.orEmpty()
             }
-            .map { it.map { library -> LicenseItem(library) } }
-            .subscribeOn(schedulers.backgroundThread)
-            .observeOn(schedulers.mainThread)
-            .doOnEvent { _, _ -> view?.showProgress(false) }
-            .subscribe({ view?.run { updateData(it) } }, { errorHandler.dispatch(it) }))
+        }.onEach {
+            when (it.status) {
+                Status.LOADING -> Timber.d("License data load started")
+                Status.SUCCESS -> view?.updateData(it.data!!)
+                Status.ERROR -> errorHandler.dispatch(it.error!!)
+            }
+        }.afterLoading {
+            view?.showProgress(false)
+        }.launch()
     }
 }

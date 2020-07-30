@@ -1,9 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <string name="app_name">Wulkanowy</string>
-
-
     <!--Activity/Fragment title-->
     <string name="login_title">Login</string>
     <string name="main_title">Wulkanowy</string>
@@ -50,11 +46,12 @@
     <string name="login_invalid_token">Invalid token</string>
     <string name="login_expired_token">Token expired</string>
     <string name="login_invalid_email">Invalid email</string>
+    <string name="login_invalid_login">Invalid login</string>
     <string name="login_invalid_symbol">Invalid symbol</string>
     <string name="login_incorrect_symbol">Student not found. Check the symbol</string>
     <string name="login_field_required">This field is required</string>
     <string name="login_duplicate_student">Selected student is already logged in</string>
-    <string name="login_symbol_helper">The symbol can be found on the register page in Uczeń -> Dostęp Mobilny -> Zarejestruj urządzenie mobilne</string>
+    <string name="login_symbol_helper">The symbol can be found on the register page in&#160;<b>Uczeń</b> →&#160;<b>Dostęp Mobilny</b> →&#160;<b>Zarejestruj urządzenie mobilne</b></string>
     <string name="login_select_student">Select students to log in to the application</string>
     <string name="login_advanced">Other options</string>
     <string name="login_advanced_warning_mobile_api">In this mode, a lucky number does not work, a class grade stats, summary of attendance, excuse for absence, completed lessons, school information and preview of the list of registered devices</string>
@@ -65,8 +62,9 @@
     <string name="login_contact_email">Email</string>
     <string name="login_contact_discord">Discord</string>
     <string name="login_email_intent_title">Send email</string>
+    <string name="login_email_details">Describe details of problem:</string>
     <string name="login_email_subject" translatable="false">Zgłoszenie: Problemy z logowaniem</string>
-    <string name="login_email_text" translatable="false">Informacje o aplikacji:\n\nUrządzenie: %1$s\nWersja SDK: %2$s\nWersja aplikacji: %3$s\n\nOpis problemu:</string>
+    <string name="login_email_text" translatable="false">Informacje o aplikacji:\n\nUrządzenie: %1$s\nWersja SDK: %2$s\nWersja aplikacji: %3$s\nDodatkowe informacje: %4$s\nOstatni błąd: %5$s\n\nOpis problemu: </string>
     <string name="login_recover_warning">Make sure the correct UONET+ register is selected!</string>
     <string name="login_recover_button">I forgot my password</string>
     <string name="login_recover_title">Recover your account</string>
@@ -115,9 +113,25 @@
         <item quantity="one">New grade</item>
         <item quantity="other">New grades</item>
     </plurals>
+    <plurals name="grade_new_items_predicted">
+        <item quantity="one">New predicted grade</item>
+        <item quantity="other">New predicted grades</item>
+    </plurals>
+    <plurals name="grade_new_items_final">
+        <item quantity="one">New final grade</item>
+        <item quantity="other">New final grades</item>
+    </plurals>
     <plurals name="grade_notify_new_items">
         <item quantity="one">You received %1$d grade</item>
         <item quantity="other">You received %1$d grades</item>
+    </plurals>
+    <plurals name="grade_notify_new_items_predicted">
+        <item quantity="one">You received %1$d predicted grade</item>
+        <item quantity="other">You received %1$d predicted grades</item>
+    </plurals>
+    <plurals name="grade_notify_new_items_final">
+        <item quantity="one">You received %1$d final grade</item>
+        <item quantity="other">You received %1$d final grades</item>
     </plurals>
 
 
@@ -128,6 +142,14 @@
     <string name="timetable_time">Hours</string>
     <string name="timetable_changes">Changes</string>
     <string name="timetable_no_items">No lessons this day</string>
+    <string name="timetable_minutes">%s min</string>
+    <string name="timetable_seconds">%s sec</string>
+    <string name="timetable_time_left">%1$s left</string>
+    <string name="timetable_time_until">in %1$s</string>
+    <string name="timetable_finished">Finished</string>
+    <string name="timetable_now">Now: %s</string>
+    <string name="timetable_next">Next: %s</string>
+    <string name="timetable_later">Later: %s</string>
 
 
     <!--Completed lessons-->
@@ -188,6 +210,8 @@
     <string name="message_move_to_bin">Move to trash</string>
     <string name="message_delete_forever">Delete permanently</string>
     <string name="message_delete_success">Message deleted successfully</string>
+    <string name="message_share">Share</string>
+    <string name="message_print">Print</string>
     <string name="message_subject">Subject</string>
     <string name="message_content">Content</string>
     <string name="message_send_successful">Message sent successfully</string>
@@ -209,6 +233,7 @@
 
     <!--Note-->
     <string name="note_no_items">No info about notes</string>
+    <string name="note_points">Points</string>
     <plurals name="note_number_item">
         <item quantity="one">%d note</item>
         <item quantity="other">%d notes</item>
@@ -225,6 +250,9 @@
 
     <!--Homework-->
     <string name="homework_no_items">No info about homework</string>
+    <string name="homework_mark_as_done">Mark as done</string>
+    <string name="homework_mark_as_undone">Mark as undone</string>
+    <string name="homework_attachments">Attachments</string>
 
 
     <!--Lucky number-->
@@ -272,6 +300,10 @@
     <string name="account_logout">Logout</string>
     <string name="account_confirm">Do you want to log out of an active student?</string>
     <string name="account_logout_student">Student logout</string>
+    <string name="account_type_student">Student account</string>
+    <string name="account_type_parent">Parent account</string>
+    <string name="account_login_mobile_api">Mobile API mode</string>
+    <string name="account_login_hybrid">Hybrid mode</string>
 
 
     <!--About-->
@@ -290,6 +322,7 @@
     <string name="about_homepage_summary">Visit the website and help develop the application</string>
     <string name="about_licenses">Licenses</string>
     <string name="about_licenses_summary">Licenses of libraries used in the application</string>
+    <string name="about_feedback_template" translatable="false">Informacje o aplikacji:\n\nUrządzenie: %1$s\nWersja SDK: %2$s\nWersja aplikacji: %3$s\n\nTreść zgłoszenia:</string>
 
 
     <!--Licenses-->
@@ -304,6 +337,11 @@
     <!--Log viewer-->
     <string name="logviewer_share">Share logs</string>
     <string name="logviewer_refresh">Refresh</string>
+
+
+    <!--Error dialog-->
+    <string name="dialog_error_check_update">Check for updates</string>
+    <string name="dialog_error_check_update_message">Before reporting a bug, check first if an update with the bug fix is available</string>
 
 
     <!--Generic-->
@@ -322,6 +360,8 @@
     <string name="all_subject">Subject</string>
     <string name="all_prev">Prev</string>
     <string name="all_next">Next</string>
+    <string name="all_search">Search</string>
+    <string name="all_search_hint">Search…</string>
 
 
     <!--Timetable Widget-->
@@ -329,6 +369,7 @@
     <string name="widget_timetable_theme_title">Choose theme</string>
     <string name="widget_timetable_theme_light">Light</string>
     <string name="widget_timetable_theme_dark">Dark</string>
+    <string name="widget_timetable_theme_system">System Theme</string>
 
 
     <!--Preferences-->
@@ -339,12 +380,18 @@
     <string name="pref_view_present">Show presence in attendance</string>
     <string name="pref_view_app_theme">Application theme</string>
     <string name="pref_view_expand_grade">Expand grades</string>
+    <string name="pref_view_timetable_show_timers">Mark current lesson in timetable</string>
+    <string name="pref_view_grade_statistics_list">Show chart list in class grades</string>
     <string name="pref_view_timetable_show_whole_class">Show whole class lessons</string>
     <string name="pref_view_grade_color_scheme">Grades color scheme</string>
     <string name="pref_view_app_language">App language</string>
 
     <string name="pref_notify_header">Notifications</string>
     <string name="pref_notify_switch">Show notifications</string>
+    <string name="pref_notify_upcoming_lessons_switch">Show upcoming lesson notifications</string>
+    <string name="pref_notify_fix_sync_issues">Fix synchronization &amp; notifications issues</string>
+    <string name="pref_notify_fix_sync_issues_message">Your device may have data synchronization issues and with notifications.\n\nTo fix them, you need to add Wulkanowy to the autostart and turn off battery optimization/saving in the phone settings.</string>
+    <string name="pref_notify_fix_sync_issues_settings_button">Go to settings</string>
     <string name="pref_notify_debug_switch">Show debug notifications</string>
 
     <string name="pref_services_header">Synchronization</string>
@@ -352,6 +399,15 @@
     <string name="pref_services_suspended">Suspended on holidays</string>
     <string name="pref_services_interval">Updates interval</string>
     <string name="pref_services_wifi">Wi-Fi only</string>
+    <string name="pref_services_force_sync">Sync now</string>
+    <string name="pref_services_message_sync_success">Synced!</string>
+    <string name="pref_services_message_sync_failed">Sync failed</string>
+    <string name="pref_services_sync_in_progress">Sync in progress</string>
+    <string name="pref_services_dialog_force_sync_title">Synchronization</string>
+    <string name="pref_services_dialog_force_sync_summary">
+        Manual sync doesn\'t refresh app views.
+        \nTo see the synced data relaunch the app after syncing.
+    </string>
 
     <string name="pref_other_header">Other</string>
     <string name="pref_other_grade_modifier_plus">Value of the plus</string>
@@ -365,6 +421,8 @@
     <string name="channel_lucky_number">Lucky number</string>
     <string name="channel_new_message">New messages</string>
     <string name="channel_new_notes">New notes</string>
+    <string name="channel_push">Push notifications</string>
+    <string name="channel_upcoming_lessons">Upcoming lessons</string>
     <string name="channel_debug">Debug</string>
 
 
@@ -386,6 +444,7 @@
     <string name="error_no_internet">No internet connection</string>
     <string name="error_timeout">Connection to the register timed out</string>
     <string name="error_login_failed">Login failed. Try again or restart the app</string>
+    <string name="error_password_change_required">Password change required</string>
     <string name="error_service_unavailable">Maintenance underway UONET + register. Try again later</string>
     <string name="error_unknown">An unexpected error occurred</string>
     <string name="error_feature_disabled">Feature disabled by your school</string>

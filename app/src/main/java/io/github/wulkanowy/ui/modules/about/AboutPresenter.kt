@@ -1,20 +1,19 @@
 package io.github.wulkanowy.ui.modules.about
 
-import eu.davidea.flexibleadapter.items.AbstractFlexibleItem
 import io.github.wulkanowy.data.repositories.student.StudentRepository
 import io.github.wulkanowy.ui.base.BasePresenter
 import io.github.wulkanowy.ui.base.ErrorHandler
+import io.github.wulkanowy.utils.AppInfo
 import io.github.wulkanowy.utils.FirebaseAnalyticsHelper
-import io.github.wulkanowy.utils.SchedulersProvider
 import timber.log.Timber
 import javax.inject.Inject
 
 class AboutPresenter @Inject constructor(
-    schedulers: SchedulersProvider,
     errorHandler: ErrorHandler,
     studentRepository: StudentRepository,
+    private val appInfo: AppInfo,
     private val analytics: FirebaseAnalyticsHelper
-) : BasePresenter<AboutView>(errorHandler, studentRepository, schedulers) {
+) : BasePresenter<AboutView>(errorHandler, studentRepository) {
 
     override fun onAttachView(view: AboutView) {
         super.onAttachView(view)
@@ -23,13 +22,13 @@ class AboutPresenter @Inject constructor(
         loadData()
     }
 
-    fun onItemSelected(item: AbstractFlexibleItem<*>) {
-        if (item !is AboutItem) return
+    fun onItemSelected(name: String) {
         view?.run {
-            when (item.title) {
+            when (name) {
                 versionRes?.first -> {
                     Timber.i("Opening log viewer")
-                    openLogViewer()
+                    if (appInfo.isDebug) openLogViewer()
+                    else openAppInMarket()
                     analytics.logEvent("about_open", "name" to "log_viewer")
                 }
                 feedbackRes?.first -> {
@@ -73,15 +72,16 @@ class AboutPresenter @Inject constructor(
 
     private fun loadData() {
         view?.run {
-            updateData(AboutScrollableHeader(), listOfNotNull(
-                versionRes?.let { (title, summary, image) -> AboutItem(title, summary, image) },
-                creatorsRes?.let { (title, summary, image) -> AboutItem(title, summary, image) },
-                feedbackRes?.let { (title, summary, image) -> AboutItem(title, summary, image) },
-                faqRes?.let { (title, summary, image) -> AboutItem(title, summary, image) },
-                discordRes?.let { (title, summary, image) -> AboutItem(title, summary, image) },
-                homepageRes?.let { (title, summary, image) -> AboutItem(title, summary, image) },
-                licensesRes?.let { (title, summary, image) -> AboutItem(title, summary, image) },
-                privacyRes?.let { (title, summary, image) -> AboutItem(title, summary, image) }))
+            updateData(listOfNotNull(
+                versionRes,
+                creatorsRes,
+                feedbackRes,
+                faqRes,
+                discordRes,
+                homepageRes,
+                licensesRes,
+                privacyRes
+            ))
         }
     }
 }

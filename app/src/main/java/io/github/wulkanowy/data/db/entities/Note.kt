@@ -3,8 +3,8 @@ package io.github.wulkanowy.data.db.entities
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import org.threeten.bp.LocalDate
 import java.io.Serializable
+import java.time.LocalDate
 
 @Entity(tableName = "Notes")
 data class Note(
@@ -16,7 +16,18 @@ data class Note(
 
     val teacher: String,
 
+    @ColumnInfo(name = "teacher_symbol")
+    val teacherSymbol: String,
+
     val category: String,
+
+    @ColumnInfo(name = "category_type")
+    val categoryType: Int,
+
+    @ColumnInfo(name = "is_points_show")
+    val isPointsShow: Boolean,
+
+    val points: Int,
 
     val content: String
 ) : Serializable {

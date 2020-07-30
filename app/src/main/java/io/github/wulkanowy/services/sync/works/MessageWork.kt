@@ -18,7 +18,8 @@ import io.github.wulkanowy.services.sync.channels.NewMessagesChannel
 import io.github.wulkanowy.ui.modules.main.MainActivity
 import io.github.wulkanowy.ui.modules.main.MainView
 import io.github.wulkanowy.utils.getCompatColor
-import io.reactivex.Completable
+import io.github.wulkanowy.utils.waitForResult
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import kotlin.random.Random
 
@@ -29,13 +30,13 @@ class MessageWork @Inject constructor(
     private val preferencesRepository: PreferencesRepository
 ) : Work {
 
-    override fun create(student: Student, semester: Semester): Completable {
-        return messageRepository.getMessages(student, semester, RECEIVED, true, preferencesRepository.isNotificationsEnable)
-            .flatMap { messageRepository.getNotNotifiedMessages(student) }
-            .flatMapCompletable {
-                if (it.isNotEmpty()) notify(it)
-                messageRepository.updateMessages(it.onEach { message -> message.isNotified = true })
-            }
+    override suspend fun doWork(student: Student, semester: Semester) {
+        messageRepository.getMessages(student, semester, RECEIVED, true, preferencesRepository.isNotificationsEnable).waitForResult()
+
+        messageRepository.getNotNotifiedMessages(student).first().let {
+            if (it.isNotEmpty()) notify(it)
+            messageRepository.updateMessages(it.onEach { message -> message.isNotified = true })
+        }
     }
 
     private fun notify(messages: List<Message>) {

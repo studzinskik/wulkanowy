@@ -13,20 +13,21 @@ import android.widget.RemoteViews
 import android.widget.RemoteViewsService
 import io.github.wulkanowy.R
 import io.github.wulkanowy.data.db.SharedPrefProvider
+import io.github.wulkanowy.data.db.entities.Student
 import io.github.wulkanowy.data.db.entities.Timetable
 import io.github.wulkanowy.data.repositories.preferences.PreferencesRepository
 import io.github.wulkanowy.data.repositories.semester.SemesterRepository
 import io.github.wulkanowy.data.repositories.student.StudentRepository
 import io.github.wulkanowy.data.repositories.timetable.TimetableRepository
+import io.github.wulkanowy.ui.modules.timetablewidget.TimetableWidgetProvider.Companion.getCurrentThemeWidgetKey
 import io.github.wulkanowy.ui.modules.timetablewidget.TimetableWidgetProvider.Companion.getDateWidgetKey
 import io.github.wulkanowy.ui.modules.timetablewidget.TimetableWidgetProvider.Companion.getStudentWidgetKey
-import io.github.wulkanowy.ui.modules.timetablewidget.TimetableWidgetProvider.Companion.getThemeWidgetKey
-import io.github.wulkanowy.utils.SchedulersProvider
 import io.github.wulkanowy.utils.getCompatColor
+import io.github.wulkanowy.utils.toFirstResult
 import io.github.wulkanowy.utils.toFormattedString
-import io.reactivex.Maybe
-import org.threeten.bp.LocalDate
+import kotlinx.coroutines.runBlocking
 import timber.log.Timber
+import java.time.LocalDate
 
 class TimetableWidgetFactory(
     private val timetableRepository: TimetableRepository,
@@ -34,16 +35,15 @@ class TimetableWidgetFactory(
     private val semesterRepository: SemesterRepository,
     private val prefRepository: PreferencesRepository,
     private val sharedPref: SharedPrefProvider,
-    private val schedulers: SchedulersProvider,
     private val context: Context,
     private val intent: Intent?
 ) : RemoteViewsService.RemoteViewsFactory {
 
+    private lateinit var student: Student
+
     private var lessons = emptyList<Timetable>()
 
-    private var savedTheme: Long? = null
-
-    private var layoutId: Int? = null
+    private var savedCurrentTheme: Long? = null
 
     private var primaryColor: Int? = null
 
@@ -71,52 +71,52 @@ class TimetableWidgetFactory(
             val studentId = sharedPref.getLong(getStudentWidgetKey(appWidgetId), 0)
 
             updateTheme(appWidgetId)
-
-            updateLessons(date, studentId)
+            lessons = getLessons(date, studentId)
         }
     }
 
     private fun updateTheme(appWidgetId: Int) {
-        savedTheme = sharedPref.getLong(getThemeWidgetKey(appWidgetId), 0)
-        layoutId = if (savedTheme == 0L) R.layout.item_widget_timetable else R.layout.item_widget_timetable_dark
+        savedCurrentTheme = sharedPref.getLong(getCurrentThemeWidgetKey(appWidgetId), 0)
 
-        primaryColor = if (savedTheme == 0L) R.color.colorPrimary else R.color.colorPrimaryLight
-        textColor = if (savedTheme == 0L) android.R.color.black else android.R.color.white
-        timetableChangeColor = if (savedTheme == 0L) R.color.timetable_change_dark else R.color.timetable_change_light
+        if (savedCurrentTheme == 0L) {
+            primaryColor = R.color.colorPrimary
+            textColor = android.R.color.black
+            timetableChangeColor = R.color.timetable_change_dark
+        } else {
+            primaryColor = R.color.colorPrimaryLight
+            textColor = android.R.color.white
+            timetableChangeColor = R.color.timetable_change_light
+        }
     }
 
     private fun getItemLayout(lesson: Timetable): Int {
         return when {
-            prefRepository.isShowWholeClassPlan(lesson.studentId) == "small" && !lesson.isStudentPlan -> {
-                if (savedTheme == 0L) R.layout.item_widget_timetable_small
+            runBlocking { prefRepository.isShowWholeClassPlan(student.studentId) } == "small" && !lesson.isStudentPlan -> {
+                if (savedCurrentTheme == 0L) R.layout.item_widget_timetable_small
                 else R.layout.item_widget_timetable_small_dark
             }
-            savedTheme == 0L -> R.layout.item_widget_timetable
-            else -> R.layout.item_widget_timetable_dark
+            savedCurrentTheme == 1L -> R.layout.item_widget_timetable_dark
+            else -> R.layout.item_widget_timetable
         }
     }
 
-    private fun updateLessons(date: LocalDate, studentId: Long) {
-        lessons = try {
-            studentRepository.isStudentSaved()
-                .filter { true }
-                .flatMap { studentRepository.getSavedStudents().toMaybe() }
-                .flatMap {
-                    val student = it.singleOrNull { student -> student.id == studentId }
+    private fun getLessons(date: LocalDate, studentId: Long) = try {
+        runBlocking {
+            if (!studentRepository.isStudentSaved()) return@runBlocking emptyList<Timetable>()
 
-                    if (student != null) Maybe.just(student)
-                    else Maybe.empty()
-                }
-                .flatMap { semesterRepository.getCurrentSemester(it).toMaybe() }
-                .flatMap { timetableRepository.getTimetable(it, date, date).toMaybe() }
-                .map { items -> items.sortedWith(compareBy({ it.number }, { !it.isStudentPlan })) }
-                .map { lessons -> lessons.filter { if (prefRepository.isShowWholeClassPlan(studentId.toInt()) == "no") it.isStudentPlan else true } }
-                .subscribeOn(schedulers.backgroundThread)
-                .blockingGet(emptyList())
-        } catch (e: Exception) {
-            Timber.e(e, "An error has occurred in timetable widget factory")
-            emptyList()
+            val students = studentRepository.getSavedStudents()
+            val student = students.singleOrNull { student -> student.id == studentId }
+                ?: return@runBlocking emptyList<Timetable>()
+
+            val semester = semesterRepository.getCurrentSemester(student)
+            timetableRepository.getTimetable(student, semester, date, date, false)
+                .toFirstResult().data.orEmpty()
+                .sortedWith(compareBy({ it.number }, { !it.isStudentPlan }))
+                .filter { if (prefRepository.isShowWholeClassPlan(student.studentId) == "no") it.isStudentPlan else true }
         }
+    } catch (e: Exception) {
+        Timber.e(e, "An error has occurred in timetable widget factory")
+        emptyList<Timetable>()
     }
 
     @SuppressLint("DefaultLocale")

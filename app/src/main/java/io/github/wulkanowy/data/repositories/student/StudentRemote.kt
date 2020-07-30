@@ -2,8 +2,7 @@ package io.github.wulkanowy.data.repositories.student
 
 import io.github.wulkanowy.data.db.entities.Student
 import io.github.wulkanowy.sdk.Sdk
-import io.reactivex.Single
-import org.threeten.bp.LocalDateTime.now
+import java.time.LocalDateTime.now
 import javax.inject.Inject
 import javax.inject.Singleton
 import io.github.wulkanowy.sdk.pojo.Student as SdkStudent
@@ -14,7 +13,7 @@ class StudentRemote @Inject constructor(private val sdk: Sdk) {
     private fun mapStudents(students: List<SdkStudent>, email: String, password: String): List<Student> {
         return students.map { student ->
             Student(
-                email = email,
+                email = email.ifBlank { student.email },
                 password = password,
                 isParent = student.isParent,
                 symbol = student.symbol,
@@ -38,15 +37,15 @@ class StudentRemote @Inject constructor(private val sdk: Sdk) {
         }
     }
 
-    fun getStudentsMobileApi(token: String, pin: String, symbol: String): Single<List<Student>> {
-        return sdk.getStudentsFromMobileApi(token, pin, symbol).map { mapStudents(it, "", "") }
+    suspend fun getStudentsMobileApi(token: String, pin: String, symbol: String): List<Student> {
+        return mapStudents(sdk.getStudentsFromMobileApi(token, pin, symbol, ""), "", "")
     }
 
-    fun getStudentsScrapper(email: String, password: String, scrapperBaseUrl: String, symbol: String): Single<List<Student>> {
-        return sdk.getStudentsFromScrapper(email, password, scrapperBaseUrl, symbol).map { mapStudents(it, email, password) }
+    suspend fun getStudentsScrapper(email: String, password: String, scrapperBaseUrl: String, symbol: String): List<Student> {
+        return mapStudents(sdk.getStudentsFromScrapper(email, password, scrapperBaseUrl, symbol), email, password)
     }
 
-    fun getStudentsHybrid(email: String, password: String, scrapperBaseUrl: String, symbol: String): Single<List<Student>> {
-        return sdk.getStudentsHybrid(email, password, scrapperBaseUrl, symbol).map { mapStudents(it, email, password) }
+    suspend fun getStudentsHybrid(email: String, password: String, scrapperBaseUrl: String, symbol: String): List<Student> {
+        return mapStudents(sdk.getStudentsHybrid(email, password, scrapperBaseUrl, "", symbol), email, password)
     }
 }

@@ -6,11 +6,11 @@ import javax.inject.Inject
 
 class PreferencesLocal @Inject constructor(private val dao: PreferenceDao) {
 
-    fun putPreference(studentId: Int, key: String, value: String) {
+    suspend fun putPreference(studentId: Int, key: String, value: String) {
         dao.putPreference(Preference(studentId, key, value))
     }
 
-    fun getPreference(studentId: Int, key: String): Preference? {
+    suspend fun getPreference(studentId: Int, key: String): Preference? {
         return dao.getPreference(studentId, key)
     }
 }

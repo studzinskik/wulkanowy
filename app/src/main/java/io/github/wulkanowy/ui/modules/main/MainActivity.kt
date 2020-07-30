@@ -9,7 +9,6 @@ import android.os.Build.VERSION_CODES.LOLLIPOP
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import androidx.core.graphics.ColorUtils
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
@@ -20,6 +19,7 @@ import com.ncapdevi.fragnav.FragNavController
 import com.ncapdevi.fragnav.FragNavController.Companion.HIDE
 import dagger.Lazy
 import io.github.wulkanowy.R
+import io.github.wulkanowy.databinding.ActivityMainBinding
 import io.github.wulkanowy.ui.base.BaseActivity
 import io.github.wulkanowy.ui.modules.account.AccountDialog
 import io.github.wulkanowy.ui.modules.attendance.AttendanceFragment
@@ -31,21 +31,24 @@ import io.github.wulkanowy.ui.modules.message.MessageFragment
 import io.github.wulkanowy.ui.modules.more.MoreFragment
 import io.github.wulkanowy.ui.modules.note.NoteFragment
 import io.github.wulkanowy.ui.modules.timetable.TimetableFragment
+import io.github.wulkanowy.utils.FirebaseAnalyticsHelper
 import io.github.wulkanowy.utils.dpToPx
 import io.github.wulkanowy.utils.getThemeAttrColor
 import io.github.wulkanowy.utils.safelyPopFragments
 import io.github.wulkanowy.utils.setOnViewChangeListener
-import kotlinx.android.synthetic.main.activity_main.*
 import timber.log.Timber
 import javax.inject.Inject
 
-class MainActivity : BaseActivity<MainPresenter>(), MainView {
+class MainActivity : BaseActivity<MainPresenter, ActivityMainBinding>(), MainView {
 
     @Inject
     override lateinit var presenter: MainPresenter
 
     @Inject
     lateinit var navController: FragNavController
+
+    @Inject
+    lateinit var analytics: FirebaseAnalyticsHelper
 
     @Inject
     lateinit var overlayProvider: Lazy<ElevationOverlayProvider>
@@ -83,9 +86,9 @@ class MainActivity : BaseActivity<MainPresenter>(), MainView {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        setSupportActionBar(mainToolbar)
-        messageContainer = mainFragmentContainer
+        setContentView(ActivityMainBinding.inflate(layoutInflater).apply { binding = this }.root)
+        setSupportActionBar(binding.mainToolbar)
+        messageContainer = binding.mainFragmentContainer
 
         presenter.onAttachView(this, intent.getSerializableExtra(EXTRA_START_MENU) as? MainView.Section)
 
@@ -101,12 +104,12 @@ class MainActivity : BaseActivity<MainPresenter>(), MainView {
     }
 
     override fun initView() {
-        with(mainToolbar) {
+        with(binding.mainToolbar) {
             if (SDK_INT >= LOLLIPOP) stateListAnimator = null
             setBackgroundColor(overlayProvider.get().compositeOverlayWithThemeSurfaceColorIfNeeded(dpToPx(4f)))
         }
 
-        with(mainBottomNav) {
+        with(binding.mainBottomNav) {
             addItems(listOf(
                 AHBottomNavigationItem(R.string.grade_title, R.drawable.ic_main_grade, 0),
                 AHBottomNavigationItem(R.string.attendance_title, R.drawable.ic_main_attendance, 0),
@@ -115,7 +118,7 @@ class MainActivity : BaseActivity<MainPresenter>(), MainView {
                 AHBottomNavigationItem(R.string.more_title, R.drawable.ic_main_more, 0)
             ))
             accentColor = getThemeAttrColor(R.attr.colorPrimary)
-            inactiveColor = ColorUtils.setAlphaComponent(getThemeAttrColor(R.attr.colorOnSurface), 153)
+            inactiveColor = getThemeAttrColor(R.attr.colorOnSurface, 153)
             defaultBackgroundColor = overlayProvider.get().compositeOverlayWithThemeSurfaceColorIfNeeded(dpToPx(8f))
             titleState = ALWAYS_SHOW
             currentItem = startMenuIndex
@@ -135,6 +138,10 @@ class MainActivity : BaseActivity<MainPresenter>(), MainView {
                 MoreFragment.newInstance()
             )
         }
+    }
+
+    override fun setCurrentScreen(name: String?) {
+        analytics.setCurrentScreen(this, name)
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
@@ -167,7 +174,7 @@ class MainActivity : BaseActivity<MainPresenter>(), MainView {
     }
 
     override fun showActionBarElevation(show: Boolean) {
-        ViewCompat.setElevation(mainToolbar, if (show) dpToPx(4f) else 0f)
+        ViewCompat.setElevation(binding.mainToolbar, if (show) dpToPx(4f) else 0f)
     }
 
     override fun notifyMenuViewReselected() {
