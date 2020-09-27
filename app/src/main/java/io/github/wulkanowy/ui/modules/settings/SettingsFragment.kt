@@ -8,7 +8,7 @@ import androidx.preference.PreferenceFragmentCompat
 import com.thelittlefireman.appkillermanager.AppKillerManager
 import com.thelittlefireman.appkillermanager.exceptions.NoActionFoundException
 import com.yariksoffice.lingver.Lingver
-import dagger.android.support.AndroidSupportInjection
+import dagger.hilt.android.AndroidEntryPoint
 import io.github.wulkanowy.R
 import io.github.wulkanowy.ui.base.BaseActivity
 import io.github.wulkanowy.ui.base.ErrorDialog
@@ -17,6 +17,7 @@ import io.github.wulkanowy.utils.AppInfo
 import io.github.wulkanowy.utils.openInternetBrowser
 import javax.inject.Inject
 
+@AndroidEntryPoint
 class SettingsFragment : PreferenceFragmentCompat(), MainView.TitledView, SettingsView {
 
     @Inject
@@ -42,7 +43,6 @@ class SettingsFragment : PreferenceFragmentCompat(), MainView.TitledView, Settin
     override val syncFailedString get() = getString(R.string.pref_services_message_sync_failed)
 
     override fun onAttach(context: Context) {
-        AndroidSupportInjection.inject(this)
         super.onAttach(context)
     }
 
@@ -116,15 +116,6 @@ class SettingsFragment : PreferenceFragmentCompat(), MainView.TitledView, Settin
 
     override fun showErrorDetailsDialog(error: Throwable) {
         ErrorDialog.newInstance(error).show(childFragmentManager, error.toString())
-    }
-
-    override fun showForceSyncDialog() {
-        AlertDialog.Builder(requireContext())
-            .setTitle(R.string.pref_services_dialog_force_sync_title)
-            .setMessage(R.string.pref_services_dialog_force_sync_summary)
-            .setPositiveButton(android.R.string.ok) { _, _ -> presenter.onForceSyncDialogSubmit() }
-            .setNegativeButton(android.R.string.cancel) { _, _ -> }
-            .show()
     }
 
     override fun showFixSyncDialog() {

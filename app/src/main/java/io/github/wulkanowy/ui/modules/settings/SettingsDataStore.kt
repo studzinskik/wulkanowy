@@ -2,6 +2,7 @@ package io.github.wulkanowy.ui.modules.settings
 
 import android.content.Context
 import androidx.preference.PreferenceDataStore
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.wulkanowy.R
 import io.github.wulkanowy.data.repositories.preferences.PreferencesRepository
 import io.github.wulkanowy.data.repositories.student.StudentRepository
@@ -12,7 +13,7 @@ import timber.log.Timber
 import javax.inject.Inject
 
 class SettingsDataStore @Inject constructor(
-    context: Context,
+    @ApplicationContext context: Context,
     studentRepository: StudentRepository,
     private val preferencesRepository: PreferencesRepository
 ) : PreferenceDataStore() {

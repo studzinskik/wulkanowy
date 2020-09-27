@@ -3,8 +3,10 @@ package io.github.wulkanowy.data.repositories.preferences
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.wulkanowy.R
 import io.github.wulkanowy.ui.modules.grade.GradeAverageMode
+import io.github.wulkanowy.ui.modules.grade.GradeSortingMode
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -12,7 +14,7 @@ import javax.inject.Singleton
 class PreferencesRepository @Inject constructor(
     private val sharedPref: SharedPreferences,
     private val local: PreferencesLocal,
-    private val context: Context
+    @ApplicationContext val context: Context
 ) {
 
     val startMenuIndex: Int
@@ -76,9 +78,24 @@ class PreferencesRepository @Inject constructor(
     private suspend fun getSetting(studentId: Int, key: Int, default: Int) = getSetting(studentId, context.getString(key)) ?: context.getString(default)
 
     private suspend fun getBooleanSetting(studentId: Int, key: Int, default: Int) = getSetting(studentId, context.getString(key))?.toBoolean() ?: context.resources.getBoolean(default)
+    val showGroupsInPlan: Boolean
+        get() = getBoolean(R.string.pref_key_timetable_show_groups, R.bool.pref_default_timetable_show_groups)
+
+    val showWholeClassPlan: String
+        get() = getString(R.string.pref_key_timetable_show_whole_class, R.string.pref_default_timetable_show_whole_class)
+
+    val gradeSortingMode: GradeSortingMode
+        get() = GradeSortingMode.getByValue(getString(R.string.pref_key_grade_sorting_mode, R.string.pref_default_grade_sorting_mode))
 
     val showTimetableTimers: Boolean
         get() = getBoolean(R.string.pref_key_timetable_show_timers, R.bool.pref_default_timetable_show_timers)
+
+    var isHomeworkFullscreen: Boolean
+        get() = getBoolean(R.string.pref_key_homework_fullscreen, R.bool.pref_default_homework_fullscreen)
+        set(value) = sharedPref.edit().putBoolean("homework_fullscreen", value).apply()
+
+    val showSubjectsWithoutGrades: Boolean
+        get() = getBoolean(R.string.pref_key_subjects_without_grades, R.bool.pref_default_subjects_without_grades)
 
     private fun getString(id: Int, default: Int) = getString(context.getString(id), default)
 
