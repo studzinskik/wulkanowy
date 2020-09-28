@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import io.github.wulkanowy.data.Status
 import io.github.wulkanowy.data.db.entities.Timetable
 import io.github.wulkanowy.data.repositories.preferences.PreferencesRepository
+import io.github.wulkanowy.data.repositories.preferences.SettingsRepository
 import io.github.wulkanowy.data.repositories.semester.SemesterRepository
 import io.github.wulkanowy.data.repositories.student.StudentRepository
 import io.github.wulkanowy.data.repositories.timetable.TimetableRepository
@@ -35,6 +36,7 @@ class TimetablePresenter @Inject constructor(
     private val timetableRepository: TimetableRepository,
     private val semesterRepository: SemesterRepository,
     private val prefRepository: PreferencesRepository,
+    private val settings: SettingsRepository,
     private val analytics: FirebaseAnalyticsHelper
 ) : BasePresenter<TimetableView>(errorHandler, studentRepository) {
 
