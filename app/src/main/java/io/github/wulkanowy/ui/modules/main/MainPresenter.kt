@@ -1,14 +1,14 @@
 package io.github.wulkanowy.ui.modules.main
 
-import io.github.wulkanowy.data.repositories.preferences.PreferencesRepository
-import io.github.wulkanowy.data.repositories.student.StudentRepository
+import io.github.wulkanowy.data.repositories.PreferencesRepository
+import io.github.wulkanowy.data.repositories.StudentRepository
 import io.github.wulkanowy.services.sync.SyncManager
 import io.github.wulkanowy.ui.base.BasePresenter
 import io.github.wulkanowy.ui.base.ErrorHandler
 import io.github.wulkanowy.ui.modules.main.MainView.Section.GRADE
 import io.github.wulkanowy.ui.modules.main.MainView.Section.MESSAGE
 import io.github.wulkanowy.ui.modules.main.MainView.Section.SCHOOL
-import io.github.wulkanowy.utils.FirebaseAnalyticsHelper
+import io.github.wulkanowy.utils.AnalyticsHelper
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -17,7 +17,7 @@ class MainPresenter @Inject constructor(
     studentRepository: StudentRepository,
     private val prefRepository: PreferencesRepository,
     private val syncManager: SyncManager,
-    private val analytics: FirebaseAnalyticsHelper
+    private val analytics: AnalyticsHelper
 ) : BasePresenter<MainView>(errorHandler, studentRepository) {
 
     fun onAttachView(view: MainView, initMenu: MainView.Section?) {
@@ -35,9 +35,8 @@ class MainPresenter @Inject constructor(
         analytics.logEvent("app_open", "destination" to initMenu?.name)
     }
 
-    fun onViewChange(section: MainView.Section?, name: String?) {
+    fun onViewChange(section: MainView.Section?) {
         view?.apply {
-            setCurrentScreen(name)
             showActionBarElevation(section != GRADE && section != MESSAGE && section != SCHOOL)
             currentViewTitle?.let { setViewTitle(it) }
             currentViewSubtitle?.let { setViewSubTitle(it.ifBlank { null }) }

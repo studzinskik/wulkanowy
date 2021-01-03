@@ -11,7 +11,7 @@ import androidx.core.app.NotificationManagerCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.wulkanowy.data.db.entities.Student
 import io.github.wulkanowy.data.db.entities.Timetable
-import io.github.wulkanowy.data.repositories.preferences.PreferencesRepository
+import io.github.wulkanowy.data.repositories.PreferencesRepository
 import io.github.wulkanowy.services.alarm.TimetableNotificationReceiver.Companion.LESSON_END
 import io.github.wulkanowy.services.alarm.TimetableNotificationReceiver.Companion.LESSON_NEXT_ROOM
 import io.github.wulkanowy.services.alarm.TimetableNotificationReceiver.Companion.LESSON_NEXT_TITLE
@@ -72,18 +72,22 @@ class TimetableNotificationSchedulerHelper @Inject constructor(
         withContext(dispatchersProvider.backgroundThread) {
             lessons.groupBy { it.date }
                 .map { it.value.sortedBy { lesson -> lesson.start } }
-                .map { it.filter { lesson -> !lesson.canceled && lesson.isStudentPlan } }
+                .map { it.filter { lesson -> lesson.isStudentPlan } }
                 .map { day ->
-                    day.forEachIndexed { index, lesson ->
-                        val intent = createIntent(student, lesson, day.getOrNull(index + 1))
+                    val canceled = day.filter { it.canceled }
+                    val active = day.filter { !it.canceled }
+
+                    cancelScheduled(canceled)
+                    active.forEachIndexed { index, lesson ->
+                        val intent = createIntent(student, lesson, active.getOrNull(index + 1))
 
                         if (lesson.start > now()) {
-                            scheduleBroadcast(intent, student.studentId, NOTIFICATION_TYPE_UPCOMING, getUpcomingLessonTime(index, day, lesson))
+                            scheduleBroadcast(intent, student.studentId, NOTIFICATION_TYPE_UPCOMING, getUpcomingLessonTime(index, active, lesson))
                         }
 
                         if (lesson.end > now()) {
                             scheduleBroadcast(intent, student.studentId, NOTIFICATION_TYPE_CURRENT, lesson.start)
-                            if (day.lastIndex == index) {
+                            if (active.lastIndex == index) {
                                 scheduleBroadcast(intent, student.studentId, NOTIFICATION_TYPE_LAST_LESSON_CANCELLATION, lesson.end)
                             }
                         }

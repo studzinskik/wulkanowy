@@ -11,11 +11,13 @@ import androidx.work.Configuration
 import com.yariksoffice.lingver.Lingver
 import dagger.hilt.android.HiltAndroidApp
 import fr.bipi.tressence.file.FileLoggerTree
+import io.github.wulkanowy.data.repositories.PreferencesRepository
 import io.github.wulkanowy.ui.base.ThemeManager
 import io.github.wulkanowy.utils.ActivityLifecycleLogger
+import io.github.wulkanowy.utils.AnalyticsHelper
 import io.github.wulkanowy.utils.AppInfo
-import io.github.wulkanowy.utils.CrashlyticsExceptionTree
-import io.github.wulkanowy.utils.CrashlyticsTree
+import io.github.wulkanowy.utils.CrashLogExceptionTree
+import io.github.wulkanowy.utils.CrashLogTree
 import io.github.wulkanowy.utils.DebugLogTree
 import timber.log.Timber
 import javax.inject.Inject
@@ -32,6 +34,12 @@ class WulkanowyApp : Application(), Configuration.Provider {
     @Inject
     lateinit var appInfo: AppInfo
 
+    @Inject
+    lateinit var preferencesRepository: PreferencesRepository
+
+    @Inject
+    lateinit var analyticsHelper: AnalyticsHelper
+
     override fun attachBaseContext(base: Context?) {
         super.attachBaseContext(base)
         MultiDex.install(this)
@@ -43,6 +51,7 @@ class WulkanowyApp : Application(), Configuration.Provider {
         themeManager.applyDefaultTheme()
 
         initLogging()
+        logCurrentLanguage()
     }
 
     private fun initLogging() {
@@ -56,10 +65,20 @@ class WulkanowyApp : Application(), Configuration.Provider {
                 .build()
             )
         } else {
-            Timber.plant(CrashlyticsExceptionTree())
-            Timber.plant(CrashlyticsTree())
+            Timber.plant(CrashLogExceptionTree())
+            Timber.plant(CrashLogTree())
         }
         registerActivityLifecycleCallbacks(ActivityLifecycleLogger())
+    }
+
+    private fun logCurrentLanguage() {
+        val newLang = if (preferencesRepository.appLanguage == "system") {
+            appInfo.systemLanguage
+        } else {
+            preferencesRepository.appLanguage
+        }
+
+        analyticsHelper.logEvent("language", "startup" to newLang)
     }
 
     override fun getWorkManagerConfiguration() = Configuration.Builder()

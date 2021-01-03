@@ -2,12 +2,12 @@ package io.github.wulkanowy.ui.modules.homework.details
 
 import io.github.wulkanowy.data.Status
 import io.github.wulkanowy.data.db.entities.Homework
-import io.github.wulkanowy.data.repositories.homework.HomeworkRepository
-import io.github.wulkanowy.data.repositories.preferences.PreferencesRepository
-import io.github.wulkanowy.data.repositories.student.StudentRepository
+import io.github.wulkanowy.data.repositories.HomeworkRepository
+import io.github.wulkanowy.data.repositories.PreferencesRepository
+import io.github.wulkanowy.data.repositories.StudentRepository
 import io.github.wulkanowy.ui.base.BasePresenter
 import io.github.wulkanowy.ui.base.ErrorHandler
-import io.github.wulkanowy.utils.FirebaseAnalyticsHelper
+import io.github.wulkanowy.utils.AnalyticsHelper
 import io.github.wulkanowy.utils.flowWithResource
 import kotlinx.coroutines.flow.onEach
 import timber.log.Timber
@@ -17,7 +17,7 @@ class HomeworkDetailsPresenter @Inject constructor(
     errorHandler: ErrorHandler,
     studentRepository: StudentRepository,
     private val homeworkRepository: HomeworkRepository,
-    private val analytics: FirebaseAnalyticsHelper,
+    private val analytics: AnalyticsHelper,
     private val preferencesRepository: PreferencesRepository
 ) : BasePresenter<HomeworkDetailsView>(errorHandler, studentRepository) {
 

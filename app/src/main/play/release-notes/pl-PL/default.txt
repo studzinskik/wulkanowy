@@ -1,10 +1,5 @@
-Wersja 0.21.2
-- naprawiliśmy logowanie do tarnowskiego dziennika
-- naprawiliśmy wyświetlanie podsumowania punktów klasy
-- dodaliśmy skróty aplikacji
-- dodaliśmy opcję pokazywania nazwy grupy w planie lekcji na liście
-- dodaliśmy opcję pokazywania w ocenach przedmiotów bez ocen
-- dodaliśmy dodatkowe opcje sortowania ocen
-- dodaliśmy rozróżnianie powiadomień dla pochwał i uwag
+Wersja 0.23.1
+- naprawiliśmy opis pola na email/login przy wyborze niestandardowych dzienników
+- naprawiliśmy obsługę dziennika lubelskiego i koszalińskiego na starszych urządzeniach (z Androidem 5 i starszymi)
 
 Pełna lista zmian: https://github.com/wulkanowy/wulkanowy/releases

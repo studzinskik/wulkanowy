@@ -1,10 +1,11 @@
 package io.github.wulkanowy.ui.modules.login.form
 
+import androidx.core.net.toUri
 import io.github.wulkanowy.data.Status
-import io.github.wulkanowy.data.repositories.student.StudentRepository
+import io.github.wulkanowy.data.repositories.StudentRepository
 import io.github.wulkanowy.ui.base.BasePresenter
 import io.github.wulkanowy.ui.modules.login.LoginErrorHandler
-import io.github.wulkanowy.utils.FirebaseAnalyticsHelper
+import io.github.wulkanowy.utils.AnalyticsHelper
 import io.github.wulkanowy.utils.afterLoading
 import io.github.wulkanowy.utils.flowWithResource
 import io.github.wulkanowy.utils.ifNullOrBlank
@@ -15,7 +16,7 @@ import javax.inject.Inject
 class LoginFormPresenter @Inject constructor(
     studentRepository: StudentRepository,
     private val loginErrorHandler: LoginErrorHandler,
-    private val analytics: FirebaseAnalyticsHelper
+    private val analytics: AnalyticsHelper
 ) : BasePresenter<LoginFormView>(loginErrorHandler, studentRepository) {
 
     private var lastError: Throwable? = null
@@ -56,7 +57,7 @@ class LoginFormPresenter @Inject constructor(
 
     fun updateUsernameLabel() {
         view?.run {
-            setUsernameLabel(if ("standard" in formHostValue) emailLabel else nicknameLabel)
+            setUsernameLabel(if ("email" !in formHostValue) nicknameLabel else emailLabel)
         }
     }
 
@@ -66,6 +67,16 @@ class LoginFormPresenter @Inject constructor(
 
     fun onUsernameTextChanged() {
         view?.clearUsernameError()
+
+        val username = view?.formUsernameValue.orEmpty().trim()
+        if ("@" in username && "@vulcan" !in username) {
+            val hosts = view?.getHostsValues().orEmpty().map { it.toUri().host to it }.toMap()
+            val usernameHost = username.substringAfter("@")
+
+            hosts[usernameHost]?.let {
+                view?.setHost(it)
+            }
+        }
     }
 
     fun onSignInClick() {
@@ -135,12 +146,12 @@ class LoginFormPresenter @Inject constructor(
             view?.setErrorUsernameRequired()
             isCorrect = false
         } else {
-            if ("@" in login && "standard" !in host) {
+            if ("@" in login && "login" in host) {
                 view?.setErrorLoginRequired()
                 isCorrect = false
             }
 
-            if ("@" !in login && "standard" in host) {
+            if ("@" !in login && "email" in host) {
                 view?.setErrorEmailRequired()
                 isCorrect = false
             }

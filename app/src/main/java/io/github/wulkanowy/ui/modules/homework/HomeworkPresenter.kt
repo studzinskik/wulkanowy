@@ -2,12 +2,12 @@ package io.github.wulkanowy.ui.modules.homework
 
 import io.github.wulkanowy.data.Status
 import io.github.wulkanowy.data.db.entities.Homework
-import io.github.wulkanowy.data.repositories.homework.HomeworkRepository
-import io.github.wulkanowy.data.repositories.semester.SemesterRepository
-import io.github.wulkanowy.data.repositories.student.StudentRepository
+import io.github.wulkanowy.data.repositories.HomeworkRepository
+import io.github.wulkanowy.data.repositories.SemesterRepository
+import io.github.wulkanowy.data.repositories.StudentRepository
 import io.github.wulkanowy.ui.base.BasePresenter
 import io.github.wulkanowy.ui.base.ErrorHandler
-import io.github.wulkanowy.utils.FirebaseAnalyticsHelper
+import io.github.wulkanowy.utils.AnalyticsHelper
 import io.github.wulkanowy.utils.afterLoading
 import io.github.wulkanowy.utils.flowWithResourceIn
 import io.github.wulkanowy.utils.getLastSchoolDayIfHoliday
@@ -29,7 +29,7 @@ class HomeworkPresenter @Inject constructor(
     studentRepository: StudentRepository,
     private val homeworkRepository: HomeworkRepository,
     private val semesterRepository: SemesterRepository,
-    private val analytics: FirebaseAnalyticsHelper
+    private val analytics: AnalyticsHelper
 ) : BasePresenter<HomeworkView>(errorHandler, studentRepository) {
 
     private var baseDate: LocalDate = LocalDate.now().nextOrSameSchoolDay

@@ -3,15 +3,15 @@ package io.github.wulkanowy.ui.modules.message.send
 import io.github.wulkanowy.data.Status
 import io.github.wulkanowy.data.db.entities.Message
 import io.github.wulkanowy.data.db.entities.Recipient
-import io.github.wulkanowy.data.repositories.message.MessageRepository
-import io.github.wulkanowy.data.repositories.preferences.PreferencesRepository
-import io.github.wulkanowy.data.repositories.recipient.RecipientRepository
-import io.github.wulkanowy.data.repositories.reportingunit.ReportingUnitRepository
-import io.github.wulkanowy.data.repositories.semester.SemesterRepository
-import io.github.wulkanowy.data.repositories.student.StudentRepository
+import io.github.wulkanowy.data.repositories.MessageRepository
+import io.github.wulkanowy.data.repositories.PreferencesRepository
+import io.github.wulkanowy.data.repositories.RecipientRepository
+import io.github.wulkanowy.data.repositories.ReportingUnitRepository
+import io.github.wulkanowy.data.repositories.SemesterRepository
+import io.github.wulkanowy.data.repositories.StudentRepository
 import io.github.wulkanowy.ui.base.BasePresenter
 import io.github.wulkanowy.ui.base.ErrorHandler
-import io.github.wulkanowy.utils.FirebaseAnalyticsHelper
+import io.github.wulkanowy.utils.AnalyticsHelper
 import io.github.wulkanowy.utils.afterLoading
 import io.github.wulkanowy.utils.flowWithResource
 import io.github.wulkanowy.utils.toFormattedString
@@ -27,7 +27,7 @@ class SendMessagePresenter @Inject constructor(
     private val reportingUnitRepository: ReportingUnitRepository,
     private val recipientRepository: RecipientRepository,
     private val preferencesRepository: PreferencesRepository,
-    private val analytics: FirebaseAnalyticsHelper
+    private val analytics: AnalyticsHelper
 ) : BasePresenter<SendMessageView>(errorHandler, studentRepository) {
 
     fun onAttachView(view: SendMessageView, message: Message?, reply: Boolean?) {

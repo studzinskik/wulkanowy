@@ -7,13 +7,17 @@ class Migration28 : Migration(27, 28) {
 
     override fun migrate(database: SupportSQLiteDatabase) {
         database.execSQL("""
-            CREATE TABLE IF NOT EXISTS Preferences (
+            CREATE TABLE IF NOT EXISTS Conferences (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                studentId INTEGER NOT NULL,
-                `key` TEXT NOT NULL,
-                value TEXT NOT NULL
+                student_id INTEGER NOT NULL,
+                diary_id INTEGER NOT NULL,
+                title TEXT NOT NULL,
+                subject TEXT NOT NULL,
+                agenda TEXT NOT NULL,
+                present_on_conference TEXT NOT NULL,
+                conference_id INTEGER NOT NULL,
+                date INTEGER NOT NULL
             )
         """)
-        database.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_Preferences_studentId_key ON Preferences (studentId, `key`)")
     }
 }

@@ -1,12 +1,12 @@
 package io.github.wulkanowy.ui.modules.schoolandteachers.school
 
 import io.github.wulkanowy.data.Status
-import io.github.wulkanowy.data.repositories.school.SchoolRepository
-import io.github.wulkanowy.data.repositories.semester.SemesterRepository
-import io.github.wulkanowy.data.repositories.student.StudentRepository
+import io.github.wulkanowy.data.repositories.SchoolRepository
+import io.github.wulkanowy.data.repositories.SemesterRepository
+import io.github.wulkanowy.data.repositories.StudentRepository
 import io.github.wulkanowy.ui.base.BasePresenter
 import io.github.wulkanowy.ui.base.ErrorHandler
-import io.github.wulkanowy.utils.FirebaseAnalyticsHelper
+import io.github.wulkanowy.utils.AnalyticsHelper
 import io.github.wulkanowy.utils.afterLoading
 import io.github.wulkanowy.utils.flowWithResourceIn
 import kotlinx.coroutines.flow.onEach
@@ -18,7 +18,7 @@ class SchoolPresenter @Inject constructor(
     studentRepository: StudentRepository,
     private val semesterRepository: SemesterRepository,
     private val schoolRepository: SchoolRepository,
-    private val analytics: FirebaseAnalyticsHelper
+    private val analytics: AnalyticsHelper
 ) : BasePresenter<SchoolView>(errorHandler, studentRepository) {
 
     private var address: String? = null

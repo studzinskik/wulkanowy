@@ -3,14 +3,13 @@ package io.github.wulkanowy.ui.modules.timetable
 import android.annotation.SuppressLint
 import io.github.wulkanowy.data.Status
 import io.github.wulkanowy.data.db.entities.Timetable
-import io.github.wulkanowy.data.repositories.preferences.PreferencesRepository
-import io.github.wulkanowy.data.repositories.preferences.SettingsRepository
-import io.github.wulkanowy.data.repositories.semester.SemesterRepository
-import io.github.wulkanowy.data.repositories.student.StudentRepository
-import io.github.wulkanowy.data.repositories.timetable.TimetableRepository
+import io.github.wulkanowy.data.repositories.PreferencesRepository
+import io.github.wulkanowy.data.repositories.SemesterRepository
+import io.github.wulkanowy.data.repositories.StudentRepository
+import io.github.wulkanowy.data.repositories.TimetableRepository
 import io.github.wulkanowy.ui.base.BasePresenter
 import io.github.wulkanowy.ui.base.ErrorHandler
-import io.github.wulkanowy.utils.FirebaseAnalyticsHelper
+import io.github.wulkanowy.utils.AnalyticsHelper
 import io.github.wulkanowy.utils.afterLoading
 import io.github.wulkanowy.utils.flowWithResourceIn
 import io.github.wulkanowy.utils.getLastSchoolDayIfHoliday
@@ -36,8 +35,7 @@ class TimetablePresenter @Inject constructor(
     private val timetableRepository: TimetableRepository,
     private val semesterRepository: SemesterRepository,
     private val prefRepository: PreferencesRepository,
-    private val settings: SettingsRepository,
-    private val analytics: FirebaseAnalyticsHelper
+    private val analytics: AnalyticsHelper
 ) : BasePresenter<TimetableView>(errorHandler, studentRepository) {
 
     private var baseDate: LocalDate = now().nextOrSameSchoolDay
@@ -112,6 +110,11 @@ class TimetablePresenter @Inject constructor(
         view?.showTimetableDialog(lesson)
     }
 
+    fun onAdditionalLessonsSwitchSelected(): Boolean {
+        view?.openAdditionalLessonsView()
+        return true
+    }
+
     fun onCompletedLessonsSwitchSelected(): Boolean {
         view?.openCompletedLessonsView()
         return true
@@ -149,18 +152,18 @@ class TimetablePresenter @Inject constructor(
                             showWholeClassPlanType = it.data!!.second,
                             showGroupsInPlanType = prefRepository.showGroupsInPlan,
                             showTimetableTimers = prefRepository.showTimetableTimers,
-                            data = it.data.first
+                            data = it.data.first.first
                                 .filter { item -> if (it.data.second == "no") item.isStudentPlan else true }
                                 .sortedWith(compareBy({ item -> item.number }, { item -> !item.isStudentPlan }))
                         )
-                        showEmpty(it.data.first.isEmpty())
+                        showEmpty(it.data.first.first.isEmpty())
                         showErrorView(false)
-                        showContent(it.data.first.isNotEmpty())
+                        showContent(it.data.first.first.isNotEmpty())
                     }
                     analytics.logEvent(
                         "load_data",
                         "type" to "timetable",
-                        "items" to it.data!!.first.size
+                        "items" to it.data!!.first.first.size
                     )
                 }
                 Status.ERROR -> {

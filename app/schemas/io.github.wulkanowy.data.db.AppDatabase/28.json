@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 28,
-    "identityHash": "f5bee8f2b1f46796ac0f37f204befd85",
+    "identityHash": "3a449a55ea73fbfbb7973f1f3f834e10",
     "entities": [
       {
         "tableName": "Students",
@@ -1765,8 +1765,8 @@
         "foreignKeys": []
       },
       {
-        "tableName": "Preferences",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `studentId` INTEGER NOT NULL, `key` TEXT NOT NULL, `value` TEXT NOT NULL)",
+        "tableName": "Conferences",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `student_id` INTEGER NOT NULL, `diary_id` INTEGER NOT NULL, `title` TEXT NOT NULL, `subject` TEXT NOT NULL, `agenda` TEXT NOT NULL, `present_on_conference` TEXT NOT NULL, `conference_id` INTEGER NOT NULL, `date` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -1776,20 +1776,50 @@
           },
           {
             "fieldPath": "studentId",
-            "columnName": "studentId",
+            "columnName": "student_id",
             "affinity": "INTEGER",
             "notNull": true
           },
           {
-            "fieldPath": "key",
-            "columnName": "key",
+            "fieldPath": "diaryId",
+            "columnName": "diary_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
             "affinity": "TEXT",
             "notNull": true
           },
           {
-            "fieldPath": "value",
-            "columnName": "value",
+            "fieldPath": "subject",
+            "columnName": "subject",
             "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "agenda",
+            "columnName": "agenda",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "presentOnConference",
+            "columnName": "present_on_conference",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "conferenceId",
+            "columnName": "conference_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "date",
+            "columnName": "date",
+            "affinity": "INTEGER",
             "notNull": true
           }
         ],
@@ -1799,24 +1829,14 @@
           ],
           "autoGenerate": true
         },
-        "indices": [
-          {
-            "name": "index_Preferences_studentId_key",
-            "unique": true,
-            "columnNames": [
-              "studentId",
-              "key"
-            ],
-            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_Preferences_studentId_key` ON `${TABLE_NAME}` (`studentId`, `key`)"
-          }
-        ],
+        "indices": [],
         "foreignKeys": []
       }
     ],
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f5bee8f2b1f46796ac0f37f204befd85')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '3a449a55ea73fbfbb7973f1f3f834e10')"
     ]
   }
 }

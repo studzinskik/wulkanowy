@@ -1,10 +1,10 @@
 package io.github.wulkanowy.ui.modules.main
 
-import io.github.wulkanowy.data.repositories.preferences.PreferencesRepository
-import io.github.wulkanowy.data.repositories.student.StudentRepository
+import io.github.wulkanowy.data.repositories.PreferencesRepository
+import io.github.wulkanowy.data.repositories.StudentRepository
 import io.github.wulkanowy.services.sync.SyncManager
 import io.github.wulkanowy.ui.base.ErrorHandler
-import io.github.wulkanowy.utils.FirebaseAnalyticsHelper
+import io.github.wulkanowy.utils.AnalyticsHelper
 import io.mockk.MockKAnnotations
 import io.mockk.Runs
 import io.mockk.clearMocks
@@ -33,7 +33,7 @@ class MainPresenterTest {
     lateinit var mainView: MainView
 
     @MockK(relaxed = true)
-    lateinit var analytics: FirebaseAnalyticsHelper
+    lateinit var analytics: AnalyticsHelper
 
     private lateinit var presenter: MainPresenter
 

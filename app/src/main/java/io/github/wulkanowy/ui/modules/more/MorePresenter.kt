@@ -1,6 +1,6 @@
 package io.github.wulkanowy.ui.modules.more
 
-import io.github.wulkanowy.data.repositories.student.StudentRepository
+import io.github.wulkanowy.data.repositories.StudentRepository
 import io.github.wulkanowy.ui.base.BasePresenter
 import io.github.wulkanowy.ui.base.ErrorHandler
 import timber.log.Timber
@@ -27,6 +27,7 @@ class MorePresenter @Inject constructor(
                 noteRes?.first -> openNoteView()
                 luckyNumberRes?.first -> openLuckyNumberView()
                 mobileDevicesRes?.first -> openMobileDevicesView()
+                conferencesRes?.first -> openConferencesView()
                 schoolAndTeachersRes?.first -> openSchoolAndTeachersView()
                 settingsRes?.first -> openSettingsView()
                 aboutRes?.first -> openAboutView()
@@ -48,6 +49,7 @@ class MorePresenter @Inject constructor(
                 noteRes,
                 luckyNumberRes,
                 mobileDevicesRes,
+                conferencesRes,
                 schoolAndTeachersRes,
                 settingsRes,
                 aboutRes

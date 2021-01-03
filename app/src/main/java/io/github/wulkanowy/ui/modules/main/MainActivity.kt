@@ -38,8 +38,9 @@ import io.github.wulkanowy.ui.modules.message.MessageFragment
 import io.github.wulkanowy.ui.modules.more.MoreFragment
 import io.github.wulkanowy.ui.modules.note.NoteFragment
 import io.github.wulkanowy.ui.modules.timetable.TimetableFragment
+import io.github.wulkanowy.utils.AnalyticsHelper
 import io.github.wulkanowy.utils.AppInfo
-import io.github.wulkanowy.utils.FirebaseAnalyticsHelper
+import io.github.wulkanowy.utils.UpdateHelper
 import io.github.wulkanowy.utils.dpToPx
 import io.github.wulkanowy.utils.getThemeAttrColor
 import io.github.wulkanowy.utils.safelyPopFragments
@@ -54,7 +55,10 @@ class MainActivity : BaseActivity<MainPresenter, ActivityMainBinding>(), MainVie
     override lateinit var presenter: MainPresenter
 
     @Inject
-    lateinit var analytics: FirebaseAnalyticsHelper
+    lateinit var analytics: AnalyticsHelper
+
+    @Inject
+    lateinit var updateHelper: UpdateHelper
 
     @Inject
     lateinit var appInfo: AppInfo
@@ -100,6 +104,7 @@ class MainActivity : BaseActivity<MainPresenter, ActivityMainBinding>(), MainVie
         setContentView(ActivityMainBinding.inflate(layoutInflater).apply { binding = this }.root)
         setSupportActionBar(binding.mainToolbar)
         messageContainer = binding.mainFragmentContainer
+        updateHelper.messageContainer = binding.mainFragmentContainer
 
         presenter.onAttachView(this, MainView.Section.values().singleOrNull { it.id == intent.getIntExtra(EXTRA_START_MENU, -1) })
 
@@ -107,6 +112,18 @@ class MainActivity : BaseActivity<MainPresenter, ActivityMainBinding>(), MainVie
             initialize(startMenuIndex, savedInstanceState)
             pushFragment(moreMenuFragments[startMenuMoreIndex])
         }
+        updateHelper.checkAndInstallUpdates(this)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateHelper.onResume(this)
+    }
+
+    @SuppressLint("NewApi")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        updateHelper.onActivityResult(requestCode, resultCode)
         if (appInfo.systemVersion >= Build.VERSION_CODES.N_MR1) initShortcuts()
     }
 
@@ -165,7 +182,10 @@ class MainActivity : BaseActivity<MainPresenter, ActivityMainBinding>(), MainVie
         }
 
         with(navController) {
-            setOnViewChangeListener(presenter::onViewChange)
+            setOnViewChangeListener { section, name ->
+                analytics.setCurrentScreen(this@MainActivity, name)
+                presenter.onViewChange(section)
+            }
             fragmentHideStrategy = HIDE
             rootFragments = listOf(
                 GradeFragment.newInstance(),
@@ -175,10 +195,6 @@ class MainActivity : BaseActivity<MainPresenter, ActivityMainBinding>(), MainVie
                 MoreFragment.newInstance()
             )
         }
-    }
-
-    override fun setCurrentScreen(name: String?) {
-        analytics.setCurrentScreen(this, name)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -191,6 +207,7 @@ class MainActivity : BaseActivity<MainPresenter, ActivityMainBinding>(), MainVie
     }
 
     override fun switchMenuView(position: Int) {
+        analytics.popCurrentScreen(navController.currentFrag!!::class.simpleName)
         navController.switchTab(position)
     }
 
@@ -228,10 +245,12 @@ class MainActivity : BaseActivity<MainPresenter, ActivityMainBinding>(), MainVie
     }
 
     fun pushView(fragment: Fragment) {
+        analytics.popCurrentScreen(navController.currentFrag!!::class.simpleName)
         navController.pushFragment(fragment)
     }
 
     override fun popView(depth: Int) {
+        analytics.popCurrentScreen(navController.currentFrag!!::class.simpleName)
         navController.safelyPopFragments(depth)
     }
 

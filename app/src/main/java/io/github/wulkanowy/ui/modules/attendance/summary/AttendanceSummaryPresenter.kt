@@ -2,13 +2,13 @@ package io.github.wulkanowy.ui.modules.attendance.summary
 
 import io.github.wulkanowy.data.Status
 import io.github.wulkanowy.data.db.entities.Subject
-import io.github.wulkanowy.data.repositories.attendancesummary.AttendanceSummaryRepository
-import io.github.wulkanowy.data.repositories.semester.SemesterRepository
-import io.github.wulkanowy.data.repositories.student.StudentRepository
-import io.github.wulkanowy.data.repositories.subject.SubjectRepository
+import io.github.wulkanowy.data.repositories.AttendanceSummaryRepository
+import io.github.wulkanowy.data.repositories.SemesterRepository
+import io.github.wulkanowy.data.repositories.StudentRepository
+import io.github.wulkanowy.data.repositories.SubjectRepository
 import io.github.wulkanowy.ui.base.BasePresenter
 import io.github.wulkanowy.ui.base.ErrorHandler
-import io.github.wulkanowy.utils.FirebaseAnalyticsHelper
+import io.github.wulkanowy.utils.AnalyticsHelper
 import io.github.wulkanowy.utils.afterLoading
 import io.github.wulkanowy.utils.flowWithResourceIn
 import kotlinx.coroutines.flow.onEach
@@ -22,7 +22,7 @@ class AttendanceSummaryPresenter @Inject constructor(
     private val attendanceSummaryRepository: AttendanceSummaryRepository,
     private val subjectRepository: SubjectRepository,
     private val semesterRepository: SemesterRepository,
-    private val analytics: FirebaseAnalyticsHelper
+    private val analytics: AnalyticsHelper
 ) : BasePresenter<AttendanceSummaryView>(errorHandler, studentRepository) {
 
     private var subjects = emptyList<Subject>()

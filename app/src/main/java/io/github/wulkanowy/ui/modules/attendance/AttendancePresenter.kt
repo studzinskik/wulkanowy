@@ -3,13 +3,13 @@ package io.github.wulkanowy.ui.modules.attendance
 import android.annotation.SuppressLint
 import io.github.wulkanowy.data.Status
 import io.github.wulkanowy.data.db.entities.Attendance
-import io.github.wulkanowy.data.repositories.attendance.AttendanceRepository
-import io.github.wulkanowy.data.repositories.preferences.PreferencesRepository
-import io.github.wulkanowy.data.repositories.semester.SemesterRepository
-import io.github.wulkanowy.data.repositories.student.StudentRepository
+import io.github.wulkanowy.data.repositories.AttendanceRepository
+import io.github.wulkanowy.data.repositories.PreferencesRepository
+import io.github.wulkanowy.data.repositories.SemesterRepository
+import io.github.wulkanowy.data.repositories.StudentRepository
 import io.github.wulkanowy.ui.base.BasePresenter
 import io.github.wulkanowy.ui.base.ErrorHandler
-import io.github.wulkanowy.utils.FirebaseAnalyticsHelper
+import io.github.wulkanowy.utils.AnalyticsHelper
 import io.github.wulkanowy.utils.afterLoading
 import io.github.wulkanowy.utils.flowWithResource
 import io.github.wulkanowy.utils.flowWithResourceIn
@@ -35,7 +35,7 @@ class AttendancePresenter @Inject constructor(
     private val attendanceRepository: AttendanceRepository,
     private val semesterRepository: SemesterRepository,
     private val prefRepository: PreferencesRepository,
-    private val analytics: FirebaseAnalyticsHelper
+    private val analytics: AnalyticsHelper
 ) : BasePresenter<AttendanceView>(errorHandler, studentRepository) {
 
     private var baseDate: LocalDate = now().previousOrSameSchoolDay

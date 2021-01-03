@@ -12,6 +12,7 @@
         <item>Pусский</item>
         <item>Українська</item>
         <item>Deutsch</item>
+        <item>Čeština</item>
     </string-array>
     <string-array name="services_interval_entries">
         <item>15 хвилин</item>
@@ -29,6 +30,10 @@
         <item>0,5</item>
         <item>0,75</item>
     </string-array>
+    <string-array name="grade_sorting_mode_entries">
+        <item>За алфавітом</item>
+        <item>За датою</item>
+    </string-array>
     <string-array name="grade_color_scheme_entries">
         <item>Dzienniczek+</item>
         <item>Wulkanowy</item>
@@ -36,8 +41,8 @@
     </string-array>
     <string-array name="grade_average_mode_entries">
         <item>Середня оцінка з 2 семестру</item>
-        <item>Average of grades from both semesters</item>
-        <item>Average of grades from the whole year</item>
+        <item>Середнє оцінювання за обидва семестри</item>
+        <item>Середнє оцінювання за весь рік</item>
     </string-array>
     <string-array name="timetable_show_whole_class_entries">
         <item>Не показувати</item>

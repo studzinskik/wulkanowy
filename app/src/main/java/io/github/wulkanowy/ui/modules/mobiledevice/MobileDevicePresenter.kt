@@ -2,12 +2,12 @@ package io.github.wulkanowy.ui.modules.mobiledevice
 
 import io.github.wulkanowy.data.Status
 import io.github.wulkanowy.data.db.entities.MobileDevice
-import io.github.wulkanowy.data.repositories.mobiledevice.MobileDeviceRepository
-import io.github.wulkanowy.data.repositories.semester.SemesterRepository
-import io.github.wulkanowy.data.repositories.student.StudentRepository
+import io.github.wulkanowy.data.repositories.MobileDeviceRepository
+import io.github.wulkanowy.data.repositories.SemesterRepository
+import io.github.wulkanowy.data.repositories.StudentRepository
 import io.github.wulkanowy.ui.base.BasePresenter
 import io.github.wulkanowy.ui.base.ErrorHandler
-import io.github.wulkanowy.utils.FirebaseAnalyticsHelper
+import io.github.wulkanowy.utils.AnalyticsHelper
 import io.github.wulkanowy.utils.afterLoading
 import io.github.wulkanowy.utils.flowWithResource
 import io.github.wulkanowy.utils.flowWithResourceIn
@@ -21,7 +21,7 @@ class MobileDevicePresenter @Inject constructor(
     studentRepository: StudentRepository,
     private val semesterRepository: SemesterRepository,
     private val mobileDeviceRepository: MobileDeviceRepository,
-    private val analytics: FirebaseAnalyticsHelper
+    private val analytics: AnalyticsHelper
 ) : BasePresenter<MobileDeviceView>(errorHandler, studentRepository) {
 
     private lateinit var lastError: Throwable
