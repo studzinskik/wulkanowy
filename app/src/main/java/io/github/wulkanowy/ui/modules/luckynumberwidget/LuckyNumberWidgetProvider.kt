@@ -57,7 +57,11 @@ class LuckyNumberWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray?) {
         Timber.d("LuckyNumberWidgetProvider.onUpdate(appWidgetIds: $appWidgetIds)")
         super.onUpdate(context, appWidgetManager, appWidgetIds)
-        context.startService(Intent(context, UpdateService::class.java).putExtra(APP_WIDGET_IDS_KEY, appWidgetIds))
+        val intent = Intent(context, UpdateService::class.java).putExtra(APP_WIDGET_IDS_KEY, appWidgetIds)
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            context.startForegroundService(intent)
+        } else context.startService(intent)
     }
 
     @AndroidEntryPoint
