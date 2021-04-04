@@ -5,9 +5,8 @@
     android:layout_height="match_parent"
     tools:context=".ui.modules.mobiledevice.MobileDeviceFragment">
 
-    <me.zhanghai.android.materialprogressbar.MaterialProgressBar
+    <com.google.android.material.progressindicator.CircularProgressIndicator
         android:id="@+id/mobileDevicesProgress"
-        style="@style/Widget.MaterialProgressBar.ProgressBar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
@@ -112,5 +111,6 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:tint="?colorOnSecondary"
-        app:srcCompat="@drawable/ic_all_add" />
+        app:srcCompat="@drawable/ic_all_add"
+        tools:ignore="ContentDescription" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

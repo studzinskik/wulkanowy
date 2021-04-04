@@ -42,10 +42,8 @@ class ErrorDialog : BaseDialogFragment<DialogErrorBinding>() {
     companion object {
         private const val ARGUMENT_KEY = "Data"
 
-        fun newInstance(error: Throwable): ErrorDialog {
-            return ErrorDialog().apply {
-                arguments = Bundle().apply { putSerializable(ARGUMENT_KEY, error) }
-            }
+        fun newInstance(error: Throwable) = ErrorDialog().apply {
+            arguments = Bundle().apply { putSerializable(ARGUMENT_KEY, error) }
         }
     }
 
@@ -57,12 +55,14 @@ class ErrorDialog : BaseDialogFragment<DialogErrorBinding>() {
         }
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return DialogErrorBinding.inflate(inflater).apply { binding = this }.root
-    }
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ) = DialogErrorBinding.inflate(inflater).apply { binding = this }.root
 
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         val stringWriter = StringWriter().apply {
             error.printStackTrace(PrintWriter(this))
@@ -114,11 +114,17 @@ class ErrorDialog : BaseDialogFragment<DialogErrorBinding>() {
             chooserTitle = getString(R.string.about_feedback),
             email = "wulkanowyinc@gmail.com",
             subject = "Zgłoszenie błędu",
-            body = requireContext().getString(R.string.about_feedback_template,
-                "${appInfo.systemManufacturer} ${appInfo.systemModel}", appInfo.systemVersion.toString(), appInfo.versionName
+            body = requireContext().getString(
+                R.string.about_feedback_template,
+                "${appInfo.systemManufacturer} ${appInfo.systemModel}",
+                appInfo.systemVersion.toString(),
+                "${appInfo.versionName}-${appInfo.buildFlavor}"
             ) + "\n" + content,
             onActivityNotFound = {
-                requireContext().openInternetBrowser("https://github.com/wulkanowy/wulkanowy/issues", ::showMessage)
+                requireContext().openInternetBrowser(
+                    "https://github.com/wulkanowy/wulkanowy/issues",
+                    ::showMessage
+                )
             }
         )
     }

@@ -1,12 +1,13 @@
 package io.github.wulkanowy
 
+import android.annotation.SuppressLint
 import android.app.Application
-import android.content.Context
 import android.util.Log.DEBUG
 import android.util.Log.INFO
 import android.util.Log.VERBOSE
+import android.webkit.WebView
+import androidx.fragment.app.FragmentManager
 import androidx.hilt.work.HiltWorkerFactory
-import androidx.multidex.MultiDex
 import androidx.work.Configuration
 import com.yariksoffice.lingver.Lingver
 import dagger.hilt.android.HiltAndroidApp
@@ -40,29 +41,26 @@ class WulkanowyApp : Application(), Configuration.Provider {
     @Inject
     lateinit var analyticsHelper: AnalyticsHelper
 
-    override fun attachBaseContext(base: Context?) {
-        super.attachBaseContext(base)
-        MultiDex.install(this)
-    }
-
+    @SuppressLint("UnsafeOptInUsageWarning")
     override fun onCreate() {
         super.onCreate()
-        Lingver.init(this)
+        FragmentManager.enableNewStateManager(false)
+        initializeAppLanguage()
         themeManager.applyDefaultTheme()
-
         initLogging()
-        logCurrentLanguage()
+        fixWebViewLocale()
     }
 
     private fun initLogging() {
         if (appInfo.isDebug) {
             Timber.plant(DebugLogTree())
-            Timber.plant(FileLoggerTree.Builder()
-                .withFileName("wulkanowy.%g.log")
-                .withDirName(applicationContext.filesDir.absolutePath)
-                .withFileLimit(10)
-                .withMinPriority(DEBUG)
-                .build()
+            Timber.plant(
+                FileLoggerTree.Builder()
+                    .withFileName("wulkanowy.%g.log")
+                    .withDirName(applicationContext.filesDir.absolutePath)
+                    .withFileLimit(10)
+                    .withMinPriority(DEBUG)
+                    .build()
             )
         } else {
             Timber.plant(CrashLogExceptionTree())
@@ -71,14 +69,24 @@ class WulkanowyApp : Application(), Configuration.Provider {
         registerActivityLifecycleCallbacks(ActivityLifecycleLogger())
     }
 
-    private fun logCurrentLanguage() {
-        val newLang = if (preferencesRepository.appLanguage == "system") {
-            appInfo.systemLanguage
-        } else {
-            preferencesRepository.appLanguage
-        }
+    private fun initializeAppLanguage() {
+        Lingver.init(this)
 
-        analyticsHelper.logEvent("language", "startup" to newLang)
+        if (preferencesRepository.appLanguage == "system") {
+            Lingver.getInstance().setFollowSystemLocale(this)
+            analyticsHelper.logEvent("language", "startup" to appInfo.systemLanguage)
+        } else {
+            analyticsHelper.logEvent("language", "startup" to preferencesRepository.appLanguage)
+        }
+    }
+
+    private fun fixWebViewLocale() {
+        //https://stackoverflow.com/questions/40398528/android-webview-language-changes-abruptly-on-android-7-0-and-above
+        try {
+            WebView(this).destroy()
+        } catch (e: Exception) {
+            //Ignore exceptions
+        }
     }
 
     override fun getWorkManagerConfiguration() = Configuration.Builder()

@@ -13,6 +13,7 @@ import io.github.wulkanowy.ui.modules.main.MainView
 import io.github.wulkanowy.ui.widgets.DividerItemDecoration
 import io.github.wulkanowy.utils.SchooldaysRangeLimiter
 import io.github.wulkanowy.utils.dpToPx
+import io.github.wulkanowy.utils.getThemeAttrColor
 import java.time.LocalDate
 import javax.inject.Inject
 
@@ -53,7 +54,10 @@ class AdditionalLessonsFragment :
 
         with(binding) {
             additionalLessonsSwipe.setOnRefreshListener(presenter::onSwipeRefresh)
+            additionalLessonsSwipe.setColorSchemeColors(requireContext().getThemeAttrColor(R.attr.colorPrimary))
+            additionalLessonsSwipe.setProgressBackgroundColorSchemeColor(requireContext().getThemeAttrColor(R.attr.colorSwipeRefresh))
             additionalLessonsErrorRetry.setOnClickListener { presenter.onRetry() }
+            additionalLessonsErrorDetails.setOnClickListener { presenter.onDetailsClick() }
 
             additionalLessonsPreviousButton.setOnClickListener { presenter.onPreviousDay() }
             additionalLessonsNavDate.setOnClickListener { presenter.onPickDate() }
@@ -128,6 +132,7 @@ class AdditionalLessonsFragment :
             setDateRangeLimiter(SchooldaysRangeLimiter())
             version = DatePickerDialog.Version.VERSION_2
             scrollOrientation = DatePickerDialog.ScrollOrientation.VERTICAL
+            vibrate(false)
             show(this@AdditionalLessonsFragment.parentFragmentManager, null)
         }
     }

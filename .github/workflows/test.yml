@@ -10,39 +10,14 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    name: Pre-build
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: fkirc/skip-duplicate-actions@master
-      - uses: actions/checkout@v2
-      - uses: gradle/wrapper-validation-action@v1
-      - uses: actions/setup-java@v1
-        with:
-          java-version: 11
-      - uses: actions/cache@v2
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}
-      - name: Build
-        run: ./gradlew --build-cache compileFdroidDebugUnitTestKotlin preFdroidDebugAndroidTestBuild dexBuilderFdroidDebugAndroidTest packageFdroidDebug packageFdroidDebugAndroidTest
-      - name: Prepare build cache
-        run: tar -cf prebuild.tar .build-cache .gradle app/build
-      - uses: actions/upload-artifact@v2
-        with:
-          name: prebuild.tar
-          path: prebuild.tar
-
   unit-tests:
       name: Unit tests
       runs-on: ubuntu-latest
       timeout-minutes: 10
-      needs: [ build ]
       steps:
+        - uses: fkirc/skip-duplicate-actions@master
         - uses: actions/checkout@v2
+        - uses: gradle/wrapper-validation-action@v1
         - uses: actions/setup-java@v1
           with:
             java-version: 11
@@ -52,11 +27,6 @@ jobs:
               ~/.gradle/caches
               ~/.gradle/wrapper
             key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}
-        - uses: actions/download-artifact@v2
-          with:
-            name: prebuild.tar
-        - name: Extract build cache
-          run: tar -xf prebuild.tar
         - name: Unit tests
           run: |
             ./gradlew --build-cache -Pcoverage testFdroidDebugUnitTest --stacktrace
@@ -65,49 +35,12 @@ jobs:
           with:
               flags: unit
 
-  instrumentation-tests:
-      name: Instrumentation tests
-      runs-on: macOS-latest
-      timeout-minutes: 15
-      needs: [ build ]
-      strategy:
-          fail-fast: true
-          matrix:
-              api-level: [21, 29]
-      steps:
-          - uses: actions/checkout@v2
-          - uses: actions/setup-java@v1
-            with:
-                java-version: 11
-          - uses: actions/cache@v2
-            with:
-              path: |
-                ~/.gradle/caches
-                ~/.gradle/wrapper
-              key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}
-          - uses: actions/download-artifact@v2
-            with:
-              name: prebuild.tar
-          - name: Extract build cache
-            run: tar -xf prebuild.tar
-          - name: Instrumentation tests
-            uses: reactivecircus/android-emulator-runner@v2
-            with:
-                api-level: ${{ matrix.api-level }}
-                arch: x86
-                script: |
-                  ./gradlew --build-cache -Pcoverage connectedFdroidDebugAndroidTest --stacktrace
-                  ./gradlew --build-cache -Pcoverage jacocoTestReport --stacktrace
-          - uses: codecov/codecov-action@v1
-            with:
-                flags: instrumented,api-${{ matrix.api-level }}
-
   deploy-google-play:
       name: Deploy to google play
       runs-on: ubuntu-latest
       timeout-minutes: 10
       environment: google-play
-      needs: [ build, unit-tests, instrumentation-tests ]
+      needs: [ unit-tests ]
       if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
       steps:
         - uses: actions/checkout@v2
@@ -120,11 +53,6 @@ jobs:
               ~/.gradle/caches
               ~/.gradle/wrapper
             key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}
-        - uses: actions/download-artifact@v2
-          with:
-            name: prebuild.tar
-        - name: Extract build cache
-          run: tar -xf prebuild.tar
         - name: Decrypt keys
           env:
             ENCRYPT_KEY: ${{ secrets.ENCRYPT_KEY }}
@@ -140,3 +68,173 @@ jobs:
             PLAY_SERVICE_ACCOUNT_EMAIL: ${{ secrets.PLAY_SERVICE_ACCOUNT_EMAIL }}
             PLAY_STORE_PASSWORD: ${{ secrets.PLAY_STORE_PASSWORD }}
           run: ./gradlew publishPlayRelease -PenableFirebase --stacktrace;
+
+  deploy-app-gallery:
+      name: Deploy to AppGallery
+      runs-on: ubuntu-latest
+      timeout-minutes: 10
+      environment: app-gallery
+      needs: [ unit-tests ]
+      if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+      steps:
+        - uses: actions/checkout@v2
+        - uses: actions/setup-java@v1
+          with:
+            java-version: 11
+        - uses: actions/cache@v2
+          with:
+            path: |
+              ~/.gradle/caches
+              ~/.gradle/wrapper
+            key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}
+        - name: Decrypt keys
+          env:
+            ENCRYPT_KEY: ${{ secrets.ENCRYPT_KEY }}
+            SERVICES_ENCRYPT_KEY: ${{ secrets.SERVICES_ENCRYPT_KEY }}
+          run: |
+            gpg --yes --batch --passphrase=$SERVICES_ENCRYPT_KEY ./app/src/release/agconnect-services.json.gpg
+            gpg --yes --batch --passphrase=$ENCRYPT_KEY ./app/key.p12.gpg
+            gpg --yes --batch --passphrase=$ENCRYPT_KEY ./app/upload-key.jks.gpg
+        - name: Build HMS version
+          env:
+            PLAY_KEY_ALIAS: ${{ secrets.PLAY_KEY_ALIAS }}
+            PLAY_KEY_PASSWORD: ${{ secrets.PLAY_KEY_PASSWORD }}
+            PLAY_STORE_PASSWORD: ${{ secrets.PLAY_STORE_PASSWORD }}
+          run: ./gradlew assembleHmsRelease --stacktrace
+        - name: Upload APK to AppGallery
+          env:
+            AGC_CLIENT_ID: ${{ secrets.AGC_CLIENT_ID }}
+            AGC_CLIENT_SECRET: ${{ secrets.AGC_CLIENT_SECRET }}
+          run: ./gradlew publishHuaweiAppGalleryHmsRelease --stacktrace;
+
+  deploy-appcenter:
+      name: Deploy to App Center
+      runs-on: ubuntu-latest
+      timeout-minutes: 10
+      environment: app-center
+      if: github.ref != 'refs/heads/develop'
+      steps:
+        - uses: actions/checkout@v2
+        - uses: actions/setup-java@v1
+          with:
+            java-version: 11
+        - uses: actions/cache@v2
+          with:
+            path: |
+              ~/.gradle/caches
+              ~/.gradle/wrapper
+            key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}
+        - name: Set run number with offset
+          env:
+            BUILD_NUMBER_OFFSET: ${{ secrets.BUILD_NUMBER_OFFSET }}
+          run: echo "RUN_NUMBER=$((GITHUB_RUN_NUMBER+BUILD_NUMBER_OFFSET))" >> $GITHUB_ENV
+        - name: Prepare build configuration
+          run: |
+            sed -i -e "s#applicationIdSuffix \".dev\"#applicationIdSuffix \".${GITHUB_HEAD_REF//[-.\/]/_}\"#" app/build.gradle
+            sed -i -e "s#.dev\"#.${GITHUB_HEAD_REF//[-.\/]/_}\"#" app/src/debug/google-services.json
+            sed -i -e "s#.dev\"#.${GITHUB_HEAD_REF//[-.\/]/_}\"#" app/src/debug/agconnect-services.json
+            sed -i -e '/versionNameSuffix/d' app/build.gradle
+        - name: Add signing config
+          run: |
+            cat >> app/build.gradle <<EOF
+            android.signingConfigs.debug {
+                storeFile file("bitrise.jks")
+                storePassword System.getenv("BITRISE_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("BITRISE_KEY_ALIAS")
+                keyPassword System.getenv("BITRISE_KEY_PASSWORD")
+            }
+            EOF
+        - name: Decrypt keys
+          env:
+            BITRISE_ENCRYPT_KEY: ${{ secrets.BITRISE_ENCRYPT_KEY }}
+          run: |
+            gpg --yes --batch --passphrase=$BITRISE_ENCRYPT_KEY ./app/bitrise.jks.gpg
+        - name: Bump version
+          uses: chkfung/android-version-actions@v1.1
+          with:
+            gradlePath: app/build.gradle
+            versionCode: ${{ env.RUN_NUMBER }}
+            versionName: ${{ env.RUN_NUMBER }}-${{ github.head_ref }}
+        - name: Build apk
+          env:
+            BITRISE_KEYSTORE_PASSWORD: ${{ secrets.BITRISE_KEYSTORE_PASSWORD }}
+            BITRISE_KEY_ALIAS: ${{ secrets.BITRISE_KEY_ALIAS }}
+            BITRISE_KEY_PASSWORD: ${{ secrets.BITRISE_KEY_PASSWORD }}
+          run: ./gradlew assembleFdroidDebug --stacktrace
+        - name: Upload apk to github artifacts
+          uses: actions/upload-artifact@v2
+          with:
+            name: wulkanowyDEV-${{ env.RUN_NUMBER }}.apk
+            path: app/build/outputs/apk/fdroid/debug/app-fdroid-debug.apk
+        - name: Deploy to app center
+          uses: wzieba/AppCenter-Github-Action@v1
+          with:
+            appName: wulkanowy/wulkanowy
+            token: ${{ secrets.APP_CENTER_TOKEN }}
+            group: Testers
+            file: app/build/outputs/apk/fdroid/debug/app-fdroid-debug.apk
+            notifyTesters: true
+            debug: true
+
+  deploy-app-distribution:
+      name: Deploy to AppDistribution
+      runs-on: ubuntu-latest
+      timeout-minutes: 10
+      environment: app-distribution
+      if: github.ref == 'refs/heads/develop'
+      steps:
+        - uses: actions/checkout@v2
+        - uses: actions/setup-java@v1
+          with:
+            java-version: 11
+        - uses: actions/cache@v2
+          with:
+            path: |
+              ~/.gradle/caches
+              ~/.gradle/wrapper
+            key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}
+        - name: Set run number with offset
+          env:
+            BUILD_NUMBER_OFFSET: ${{ secrets.BUILD_NUMBER_OFFSET }}
+          run: echo "RUN_NUMBER=$((GITHUB_RUN_NUMBER+BUILD_NUMBER_OFFSET))" >> $GITHUB_ENV
+        - name: Add signing config
+          run: |
+            cat >> app/build.gradle <<EOF
+            android.signingConfigs.debug {
+                storeFile file("bitrise.jks")
+                storePassword System.getenv("BITRISE_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("BITRISE_KEY_ALIAS")
+                keyPassword System.getenv("BITRISE_KEY_PASSWORD")
+            }
+            EOF
+        - name: Decrypt keys
+          env:
+            BITRISE_ENCRYPT_KEY: ${{ secrets.BITRISE_ENCRYPT_KEY }}
+            BITRISE_SERVICES_ENCRYPT_KEY: ${{ secrets.BITRISE_SERVICES_ENCRYPT_KEY }}
+          run: |
+            gpg --yes --batch --passphrase=$BITRISE_SERVICES_ENCRYPT_KEY ./app/src/debug/google-services.json.gpg
+            gpg --yes --batch --passphrase=$BITRISE_ENCRYPT_KEY ./app/bitrise.jks.gpg
+        - name: Bump version
+          uses: chkfung/android-version-actions@v1.1
+          with:
+            gradlePath: app/build.gradle
+            versionCode: ${{ env.RUN_NUMBER }}
+            versionName: ${{ env.RUN_NUMBER }}
+        - name: Build apk
+          env:
+            BITRISE_KEYSTORE_PASSWORD: ${{ secrets.BITRISE_KEYSTORE_PASSWORD }}
+            BITRISE_KEY_ALIAS: ${{ secrets.BITRISE_KEY_ALIAS }}
+            BITRISE_KEY_PASSWORD: ${{ secrets.BITRISE_KEY_PASSWORD }}
+          run: ./gradlew assemblePlayDebug -PenableFirebase --stacktrace
+        - name: Upload apk to github artifacts
+          uses: actions/upload-artifact@v2
+          with:
+            name: wulkanowyDEV-${{ env.RUN_NUMBER }}-dev.apk
+            path: app/build/outputs/apk/play/debug/app-play-debug.apk
+        - name: Deploy to app distribution
+          uses: wzieba/Firebase-Distribution-Github-Action@v1
+          with:
+            appId: ${{ secrets.FIREBASE_APP_ID }}
+            token: ${{ secrets.FIREBASE_TOKEN }}
+            groups: discord
+            file: app/build/outputs/apk/play/debug/app-play-debug.apk

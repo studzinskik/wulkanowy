@@ -9,7 +9,10 @@ import io.github.wulkanowy.R
 import io.github.wulkanowy.data.db.entities.LuckyNumber
 import io.github.wulkanowy.databinding.FragmentLuckyNumberBinding
 import io.github.wulkanowy.ui.base.BaseFragment
+import io.github.wulkanowy.ui.modules.luckynumber.history.LuckyNumberHistoryFragment
+import io.github.wulkanowy.ui.modules.main.MainActivity
 import io.github.wulkanowy.ui.modules.main.MainView
+import io.github.wulkanowy.utils.getThemeAttrColor
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -38,7 +41,10 @@ class LuckyNumberFragment :
 
     override fun initView() {
         with(binding) {
-            luckyNumberSwipe.setOnRefreshListener { presenter.onSwipeRefresh() }
+            luckyNumberSwipe.setOnRefreshListener(presenter::onSwipeRefresh)
+            luckyNumberSwipe.setColorSchemeColors(requireContext().getThemeAttrColor(R.attr.colorPrimary))
+            luckyNumberSwipe.setProgressBackgroundColorSchemeColor(requireContext().getThemeAttrColor(R.attr.colorSwipeRefresh))
+            luckyNumberHistoryButton.setOnClickListener { openLuckyNumberHistory() }
             luckyNumberErrorRetry.setOnClickListener { presenter.onRetry() }
             luckyNumberErrorDetails.setOnClickListener { presenter.onDetailsClick() }
         }
@@ -74,6 +80,10 @@ class LuckyNumberFragment :
 
     override fun showContent(show: Boolean) {
         binding.luckyNumberContent.visibility = if (show) VISIBLE else GONE
+    }
+
+    override fun openLuckyNumberHistory() {
+        (activity as? MainActivity)?.pushView(LuckyNumberHistoryFragment.newInstance())
     }
 
     override fun onDestroyView() {

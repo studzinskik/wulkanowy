@@ -21,8 +21,7 @@ class GradePresenter @Inject constructor(
     private val analytics: AnalyticsHelper
 ) : BasePresenter<GradeView>(errorHandler, studentRepository) {
 
-    var selectedIndex = 0
-        private set
+    private var selectedIndex = 0
 
     private var schoolYear = 0
 
@@ -32,9 +31,8 @@ class GradePresenter @Inject constructor(
 
     private lateinit var lastError: Throwable
 
-    fun onAttachView(view: GradeView, savedIndex: Int?) {
+    override fun onAttachView(view: GradeView) {
         super.onAttachView(view)
-        selectedIndex = savedIndex ?: 0
         view.initView()
         Timber.i("Grade view was initialized with $selectedIndex index")
         errorHandler.showErrorMessage = ::showErrorViewOnError
@@ -51,7 +49,9 @@ class GradePresenter @Inject constructor(
     }
 
     fun onSemesterSwitch(): Boolean {
-        if (semesters.isNotEmpty()) view?.showSemesterDialog(selectedIndex - 1)
+        if (semesters.isNotEmpty()) {
+            view?.showSemesterDialog(selectedIndex - 1, semesters.take(2))
+        }
         return true
     }
 
@@ -139,11 +139,17 @@ class GradePresenter @Inject constructor(
 
     private fun loadChild(index: Int, forceRefresh: Boolean = false) {
         Timber.d("Load grade tab child. Selected semester: $selectedIndex, semesters: ${semesters.joinToString { it.semesterName.toString() }}")
-        semesters.first { it.semesterName == selectedIndex }.semesterId.also {
-            if (forceRefresh || loadedSemesterId[index] != it) {
-                Timber.i("Load grade child view index: $index")
-                view?.notifyChildLoadData(index, it, forceRefresh)
-            }
+
+        val newSelectedSemesterId = try {
+            semesters.first { it.semesterName == selectedIndex }.semesterId
+        } catch (e: NoSuchElementException) {
+            Timber.e(e, "Selected semester no exists")
+            return
+        }
+
+        if (forceRefresh || loadedSemesterId[index] != newSelectedSemesterId) {
+            Timber.i("Load grade child view index: $index")
+            view?.notifyChildLoadData(index, newSelectedSemesterId, forceRefresh)
         }
     }
 

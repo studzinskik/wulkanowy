@@ -2,6 +2,7 @@ package io.github.wulkanowy.utils
 
 import io.github.wulkanowy.data.Resource
 import io.github.wulkanowy.data.Status
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
@@ -12,8 +13,11 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.takeWhile
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 inline fun <ResultType, RequestType> networkBoundResource(
+    mutex: Mutex = Mutex(),
     showSavedOnLoading: Boolean = true,
     crossinline query: () -> Flow<ResultType>,
     crossinline fetch: suspend (ResultType) -> RequestType,
@@ -30,7 +34,7 @@ inline fun <ResultType, RequestType> networkBoundResource(
 
         try {
             val newData = fetch(data)
-            saveFetchResult(data, newData)
+            mutex.withLock { saveFetchResult(query().first(), newData) }
             query().map { Resource.success(filterResult(it)) }
         } catch (throwable: Throwable) {
             onFetchFailed(throwable)
@@ -43,11 +47,12 @@ inline fun <ResultType, RequestType> networkBoundResource(
 
 @JvmName("networkBoundResourceWithMap")
 inline fun <ResultType, RequestType, T> networkBoundResource(
+    mutex: Mutex = Mutex(),
     showSavedOnLoading: Boolean = true,
     crossinline query: () -> Flow<ResultType>,
     crossinline fetch: suspend (ResultType) -> RequestType,
     crossinline saveFetchResult: suspend (old: ResultType, new: RequestType) -> Unit,
-    crossinline onFetchFailed: (Throwable) -> Unit = { Unit },
+    crossinline onFetchFailed: (Throwable) -> Unit = { },
     crossinline shouldFetch: (ResultType) -> Boolean = { true },
     crossinline mapResult: (ResultType) -> T
 ) = flow {
@@ -58,7 +63,8 @@ inline fun <ResultType, RequestType, T> networkBoundResource(
         if (showSavedOnLoading) emit(Resource.loading(mapResult(data)))
 
         try {
-            saveFetchResult(data, fetch(data))
+            val newData = fetch(data)
+            mutex.withLock { saveFetchResult(query().first(), newData) }
             query().map { Resource.success(mapResult(it)) }
         } catch (throwable: Throwable) {
             onFetchFailed(throwable)
@@ -71,24 +77,14 @@ inline fun <ResultType, RequestType, T> networkBoundResource(
 
 fun <T> flowWithResource(block: suspend () -> T) = flow {
     emit(Resource.loading())
-    emit(try {
-        Resource.success(block())
-    } catch (e: Throwable) {
-        Resource.error(e)
-    })
-}
+    emit(Resource.success(block()))
+}.catch { emit(Resource.error(it)) }
 
+@OptIn(FlowPreview::class)
 fun <T> flowWithResourceIn(block: suspend () -> Flow<Resource<T>>) = flow {
     emit(Resource.loading())
-
-    block()
-        .catch { emit(Resource.error(it)) }
-        .collect {
-            if (it.status != Status.LOADING || (it.status == Status.LOADING && it.data != null)) { // LOADING without data is already emitted
-                emit(it)
-            }
-        }
-}
+    emitAll(block().filter { it.status != Status.LOADING || (it.status == Status.LOADING && it.data != null) })
+}.catch { emit(Resource.error(it)) }
 
 fun <T> Flow<Resource<T>>.afterLoading(callback: () -> Unit) = onEach {
     if (it.status != Status.LOADING) callback()
@@ -96,4 +92,5 @@ fun <T> Flow<Resource<T>>.afterLoading(callback: () -> Unit) = onEach {
 
 suspend fun <T> Flow<Resource<T>>.toFirstResult() = filter { it.status != Status.LOADING }.first()
 
-suspend fun <T> Flow<Resource<T>>.waitForResult() = takeWhile { it.status == Status.LOADING }.collect()
+suspend fun <T> Flow<Resource<T>>.waitForResult() =
+    takeWhile { it.status == Status.LOADING }.collect()

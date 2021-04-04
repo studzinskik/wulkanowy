@@ -12,6 +12,7 @@ import io.github.wulkanowy.ui.base.BaseFragment
 import io.github.wulkanowy.ui.modules.main.MainView
 import io.github.wulkanowy.ui.modules.schoolandteachers.SchoolAndTeachersChildView
 import io.github.wulkanowy.ui.modules.schoolandteachers.SchoolAndTeachersFragment
+import io.github.wulkanowy.utils.getThemeAttrColor
 import io.github.wulkanowy.utils.openDialer
 import io.github.wulkanowy.utils.openNavigation
 import javax.inject.Inject
@@ -39,7 +40,9 @@ class SchoolFragment : BaseFragment<FragmentSchoolBinding>(R.layout.fragment_sch
 
     override fun initView() {
         with(binding) {
-            schoolSwipe.setOnRefreshListener { presenter.onSwipeRefresh() }
+            schoolSwipe.setOnRefreshListener(presenter::onSwipeRefresh)
+            schoolSwipe.setColorSchemeColors(requireContext().getThemeAttrColor(R.attr.colorPrimary))
+            schoolSwipe.setProgressBackgroundColorSchemeColor(requireContext().getThemeAttrColor(R.attr.colorSwipeRefresh))
             schoolErrorRetry.setOnClickListener { presenter.onRetry() }
             schoolErrorDetails.setOnClickListener { presenter.onDetailsClick() }
 
@@ -50,13 +53,14 @@ class SchoolFragment : BaseFragment<FragmentSchoolBinding>(R.layout.fragment_sch
 
     override fun updateData(data: School) {
         with(binding) {
-            schoolName.text = data.name
-            schoolAddress.text = data.address.ifBlank { "-" }
+            val noDataString = getString(R.string.all_no_data)
+            schoolName.text = data.name.ifBlank { noDataString }
+            schoolAddress.text = data.address.ifBlank { noDataString }
             schoolAddressButton.visibility = if (data.address.isNotBlank()) VISIBLE else GONE
-            schoolTelephone.text = data.contact.ifBlank { "-" }
+            schoolTelephone.text = data.contact.ifBlank { noDataString }
             schoolTelephoneButton.visibility = if (data.contact.isNotBlank()) VISIBLE else GONE
-            schoolHeadmaster.text = data.headmaster
-            schoolPedagogue.text = data.pedagogue
+            schoolHeadmaster.text = data.headmaster.ifBlank { noDataString }
+            schoolPedagogue.text = data.pedagogue.ifBlank { noDataString }
         }
     }
 

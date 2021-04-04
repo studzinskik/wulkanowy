@@ -5,6 +5,7 @@ import io.github.wulkanowy.data.db.dao.SemesterDao
 import io.github.wulkanowy.data.db.dao.StudentDao
 import io.github.wulkanowy.sdk.Sdk
 import io.github.wulkanowy.sdk.pojo.Student
+import io.github.wulkanowy.utils.AppInfo
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
 import io.mockk.impl.annotations.MockK
@@ -30,12 +31,21 @@ class StudentTest {
     @Before
     fun initApi() {
         MockKAnnotations.init(this)
-        studentRepository = StudentRepository(mockk(), TestDispatchersProvider(), studentDb, semesterDb, mockSdk)
+        studentRepository = StudentRepository(
+            mockk(),
+            TestDispatchersProvider(),
+            studentDb,
+            semesterDb,
+            mockSdk,
+            AppInfo()
+        )
     }
 
     @Test
     fun testRemoteAll() {
-        coEvery { mockSdk.getStudentsFromScrapper(any(), any(), any(), any()) } returns listOf(getStudent("test"))
+        coEvery { mockSdk.getStudentsFromScrapper(any(), any(), any(), any()) } returns listOf(
+            getStudent("test")
+        )
 
         val students = runBlocking { studentRepository.getStudentsScrapper("", "", "http://fakelog.cf", "") }
         assertEquals(1, students.size)
