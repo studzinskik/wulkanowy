@@ -5,9 +5,15 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import io.github.wulkanowy.data.db.SharedPrefProvider
+import io.github.wulkanowy.data.db.entities.Student
+import io.github.wulkanowy.data.exceptions.NoCurrentStudentException
+import io.github.wulkanowy.data.repositories.StudentRepository
+import io.github.wulkanowy.utils.AutoRefreshHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import timber.log.Timber
 import javax.inject.Inject
 import kotlin.coroutines.CoroutineContext
 
@@ -19,16 +25,40 @@ abstract class BaseAppWidgetProvider : BroadcastReceiver(), CoroutineScope {
     @Inject
     lateinit var appWidgetManager: AppWidgetManager
 
+    @Inject
+    lateinit var studentRepository: StudentRepository
+
+    @Inject
+    lateinit var sharedPref: SharedPrefProvider
+
+    @Inject
+    lateinit var refreshHelper: AutoRefreshHelper
+
     private var job: Job = Job()
 
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Main + job
 
     companion object {
-        const val WIDGET_ID_KEY = AppWidgetManager.EXTRA_APPWIDGET_IDS
+        const val WIDGET_UPDATE_STATUS = "widget_update_status"
+        const val WIDGET_IDS_KEY = AppWidgetManager.EXTRA_APPWIDGET_IDS
+    }
+
+    fun Bundle.toPrintableString(): String {
+        return keySet().map {
+            it to get(it)
+        }.map { (key, value) ->
+            key to when (value) {
+                is IntArray -> value.toList()
+                else -> value
+            }
+        }.joinToString(", ") { (key, value) ->
+            "$key: $value"
+        }
     }
 
     override fun onReceive(context: Context, intent: Intent) {
+        Timber.d("OnReceive $intent (extras: ${intent.extras?.toPrintableString()})")
         val extras = intent.extras
 
         when (intent.action) {
@@ -66,8 +96,36 @@ abstract class BaseAppWidgetProvider : BroadcastReceiver(), CoroutineScope {
         }
     }
 
+    fun getCellsForSize(size: Int): Int {
+        var n = 2
+        while (74 * n - 30 < size) ++n
+        return n - 1
+    }
+
+    protected suspend fun getStudent(widgetKey: String): Student? {
+        return try {
+            val studentId = sharedPref.getLong(widgetKey, 0)
+            val students = studentRepository.getSavedStudents()
+            val student = students.singleOrNull { it.student.id == studentId }?.student
+            when {
+                student != null -> student
+                studentId != 0L && studentRepository.isCurrentStudentSet() -> {
+                    studentRepository.getCurrentStudent(false).also {
+                        sharedPref.putLong(widgetKey, it.id)
+                    }
+                }
+                else -> null
+            }
+        } catch (e: Throwable) {
+            if (e.cause !is NoCurrentStudentException) {
+                Timber.e(e, "An error has occurred in lucky number provider")
+            }
+            null
+        }
+    }
+
     open fun onUpdate(context: Context, appWidgetIds: IntArray, extras: Bundle?) {}
-    open fun onAppWidgetOptionsChanged(context: Context, appWidgetId: Int, newOptions: Bundle?) {}
+    open fun onAppWidgetOptionsChanged(context: Context, appWidgetId: Int, newOpts: Bundle?) {}
     open fun onEnabled(context: Context) {}
     open fun onDisabled(context: Context) {}
     open fun onDeleted(context: Context, appWidgetId: Int, extras: Bundle) {}
