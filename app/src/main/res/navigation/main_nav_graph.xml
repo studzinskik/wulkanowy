@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_nav_graph"
+    app:startDestination="@id/dashboardFragment">
+
+    <action
+        android:id="@+id/action_to_switch_dialog"
+        app:destination="@id/accountQuickDialog" />
+
+    <fragment
+        android:id="@+id/dashboardFragment"
+        android:name="io.github.wulkanowy.ui.modules.dashboard.DashboardFragment"
+        android:label="@string/dashboard_title"
+        tools:layout="@layout/fragment_dashboard" />
+    <fragment
+        android:id="@+id/gradeFragment"
+        android:name="io.github.wulkanowy.ui.modules.grade.GradeFragment"
+        android:label="@string/grade_title"
+        tools:layout="@layout/fragment_grade" />
+    <fragment
+        android:id="@+id/attendanceFragment"
+        android:name="io.github.wulkanowy.ui.modules.attendance.AttendanceFragment"
+        android:label="@string/attendance_title"
+        tools:layout="@layout/fragment_attendance" />
+    <fragment
+        android:id="@+id/timetableFragment"
+        android:name="io.github.wulkanowy.ui.modules.timetable.TimetableFragment"
+        android:label="@string/timetable_title"
+        tools:layout="@layout/fragment_timetable">
+        <argument
+            android:name="openDate"
+            android:defaultValue="@null"
+            app:argType="io.github.wulkanowy.utils.LocalDateWrapper"
+            app:nullable="true" />
+    </fragment>
+    <fragment
+        android:id="@+id/messageFragment"
+        android:name="io.github.wulkanowy.ui.modules.message.MessageFragment"
+        android:label="@string/message_title"
+        tools:layout="@layout/fragment_message" />
+    <fragment
+        android:id="@+id/examFragment"
+        android:name="io.github.wulkanowy.ui.modules.exam.ExamFragment"
+        android:label="@string/exam_title"
+        tools:layout="@layout/fragment_exam" />
+    <fragment
+        android:id="@+id/homeworkFragment"
+        android:name="io.github.wulkanowy.ui.modules.homework.HomeworkFragment"
+        android:label="@string/homework_title"
+        tools:layout="@layout/fragment_homework" />
+    <fragment
+        android:id="@+id/noteFragment"
+        android:name="io.github.wulkanowy.ui.modules.note.NoteFragment"
+        android:label="@string/note_title"
+        tools:layout="@layout/fragment_note" />
+    <fragment
+        android:id="@+id/luckyNumberFragment"
+        android:name="io.github.wulkanowy.ui.modules.luckynumber.LuckyNumberFragment"
+        android:label="@string/lucky_number_title"
+        tools:layout="@layout/fragment_lucky_number" />
+    <fragment
+        android:id="@+id/conferenceFragment"
+        android:name="io.github.wulkanowy.ui.modules.conference.ConferenceFragment"
+        android:label="@string/conferences_title"
+        tools:layout="@layout/fragment_conference" />
+    <fragment
+        android:id="@+id/schoolAnnouncementFragment"
+        android:name="io.github.wulkanowy.ui.modules.schoolannouncement.SchoolAnnouncementFragment"
+        android:label="@string/school_announcement_title"
+        tools:layout="@layout/fragment_school_announcement" />
+    <fragment
+        android:id="@+id/schoolAndTeachersFragment"
+        android:name="io.github.wulkanowy.ui.modules.schoolandteachers.SchoolAndTeachersFragment"
+        android:label="@string/schoolandteachers_title"
+        tools:layout="@layout/fragment_schoolandteachers" />
+    <fragment
+        android:id="@+id/mobileDeviceFragment"
+        android:name="io.github.wulkanowy.ui.modules.mobiledevice.MobileDeviceFragment"
+        android:label="@string/mobile_devices_title"
+        tools:layout="@layout/fragment_mobile_device" />
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="io.github.wulkanowy.ui.modules.settings.SettingsFragment"
+        android:label="@string/settings_title" />
+    <fragment
+        android:id="@+id/moreFragment"
+        android:name="io.github.wulkanowy.ui.modules.more.MoreFragment"
+        android:label="@string/more_title"
+        tools:layout="@layout/fragment_more" />
+    <fragment
+        android:id="@+id/accountFragment"
+        android:name="io.github.wulkanowy.ui.modules.account.AccountFragment"
+        android:label="@string/account_title"
+        tools:layout="@layout/fragment_account" />
+    <fragment
+        android:id="@+id/studentInfoFragment"
+        android:name="io.github.wulkanowy.ui.modules.studentinfo.StudentInfoFragment"
+        android:label="@string/student_info_title"
+        tools:layout="@layout/fragment_student_info" />
+    <dialog
+        android:id="@+id/accountQuickDialog"
+        android:name="io.github.wulkanowy.ui.modules.account.accountquick.AccountQuickDialog"
+        tools:layout="@layout/dialog_account_quick">
+        <argument
+            android:name="students"
+            app:argType="io.github.wulkanowy.data.db.entities.StudentsWrapper" />
+    </dialog>
+</navigation>

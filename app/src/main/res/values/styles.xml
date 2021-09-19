@@ -37,7 +37,6 @@
     </style>
 
     <style name="Widget.Wulkanowy.Chip.Choice" parent="Widget.MaterialComponents.Chip.Choice">
-        ...
         <item name="materialThemeOverlay">@style/ThemeOverlay.Wulkanowy.Chip.Choice</item>
     </style>
 

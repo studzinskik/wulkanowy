@@ -8,6 +8,7 @@ import android.view.View
 import android.view.View.GONE
 import android.view.View.VISIBLE
 import androidx.core.text.parseAsHtml
+import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.datepicker.CalendarConstraints
 import com.google.android.material.datepicker.MaterialDatePicker
@@ -41,6 +42,8 @@ class TimetableFragment : BaseFragment<FragmentTimetableBinding>(R.layout.fragme
     @Inject
     lateinit var timetableAdapter: TimetableAdapter
 
+    private val args: TimetableFragmentArgs by navArgs()
+
     companion object {
         private const val SAVED_DATE_KEY = "CURRENT_DATE"
 
@@ -69,8 +72,8 @@ class TimetableFragment : BaseFragment<FragmentTimetableBinding>(R.layout.fragme
         binding = FragmentTimetableBinding.bind(view)
         messageContainer = binding.timetableRecycler
 
-        val initDate = savedInstanceState?.getLong(SAVED_DATE_KEY)
-            ?: arguments?.getLong(ARGUMENT_DATE_KEY)?.takeUnless { it == 0L }
+        val initDate = savedInstanceState?.getSerializable(SAVED_DATE_KEY) as? LocalDate
+            ?: args.openDate?.value
 
         presenter.onAttachView(this, initDate)
     }
@@ -227,7 +230,7 @@ class TimetableFragment : BaseFragment<FragmentTimetableBinding>(R.layout.fragme
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putLong(SAVED_DATE_KEY, presenter.currentDate.toEpochDay())
+        outState.putSerializable(SAVED_DATE_KEY, presenter.currentDate)
     }
 
     override fun onDestroyView() {

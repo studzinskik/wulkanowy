@@ -26,7 +26,8 @@
             android:layout_height="match_parent"
             android:clipToPadding="false"
             android:paddingTop="6dp"
-            android:paddingBottom="6dp" />
+            android:paddingBottom="6dp"
+            tools:listitem="@layout/item_dashboard_lessons" />
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <LinearLayout
@@ -37,7 +38,7 @@
         android:orientation="vertical"
         android:visibility="gone"
         tools:ignore="UseCompoundDrawables"
-        tools:visibility="visible">
+        tools:visibility="gone">
 
         <ImageView
             android:layout_width="100dp"

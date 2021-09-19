@@ -26,7 +26,6 @@ import timber.log.Timber
 import java.time.LocalDate
 import java.time.LocalDate.now
 import java.time.LocalDate.of
-import java.time.LocalDate.ofEpochDay
 import javax.inject.Inject
 
 class TimetablePresenter @Inject constructor(
@@ -45,12 +44,12 @@ class TimetablePresenter @Inject constructor(
 
     private lateinit var lastError: Throwable
 
-    fun onAttachView(view: TimetableView, date: Long?) {
+    fun onAttachView(view: TimetableView, date: LocalDate?) {
         super.onAttachView(view)
         view.initView()
         Timber.i("Timetable was initialized")
         errorHandler.showErrorMessage = ::showErrorViewOnError
-        reloadView(ofEpochDay(date ?: baseDate.toEpochDay()))
+        reloadView(date ?: baseDate)
         loadData()
         if (currentDate.isHolidays) setBaseDateOnHolidays()
     }

@@ -15,16 +15,8 @@ import io.github.wulkanowy.R
 import io.github.wulkanowy.databinding.FragmentDashboardBinding
 import io.github.wulkanowy.ui.base.BaseFragment
 import io.github.wulkanowy.ui.modules.account.accountdetails.AccountDetailsFragment
-import io.github.wulkanowy.ui.modules.attendance.summary.AttendanceSummaryFragment
-import io.github.wulkanowy.ui.modules.conference.ConferenceFragment
-import io.github.wulkanowy.ui.modules.exam.ExamFragment
-import io.github.wulkanowy.ui.modules.grade.GradeFragment
-import io.github.wulkanowy.ui.modules.homework.HomeworkFragment
-import io.github.wulkanowy.ui.modules.luckynumber.LuckyNumberFragment
 import io.github.wulkanowy.ui.modules.main.MainActivity
 import io.github.wulkanowy.ui.modules.main.MainView
-import io.github.wulkanowy.ui.modules.message.MessageFragment
-import io.github.wulkanowy.ui.modules.schoolannouncement.SchoolAnnouncementFragment
 import io.github.wulkanowy.ui.modules.timetable.TimetableFragment
 import io.github.wulkanowy.utils.capitalise
 import io.github.wulkanowy.utils.getThemeAttrColor
@@ -75,27 +67,30 @@ class DashboardFragment : BaseFragment<FragmentDashboardBinding>(R.layout.fragme
 
         dashboardAdapter.apply {
             onAccountTileClickListener = {
+
                 mainActivity.pushView(AccountDetailsFragment.newInstance(it))
             }
             onLuckyNumberTileClickListener = {
-                mainActivity.pushView(LuckyNumberFragment.newInstance())
+                mainActivity.navigateToDestination(R.id.luckyNumberFragment)
             }
-            onMessageTileClickListener = { mainActivity.pushView(MessageFragment.newInstance()) }
+            onMessageTileClickListener = {
+                mainActivity.navigateToDestination(R.id.messageFragment)
+            }
             onAttendanceTileClickListener = {
-                mainActivity.pushView(AttendanceSummaryFragment.newInstance())
+                mainActivity.navigateToDestination(R.id.attendanceFragment)
             }
             onLessonsTileClickListener = {
                 mainActivity.pushView(TimetableFragment.newInstance(it))
             }
-            onGradeTileClickListener = { mainActivity.pushView(GradeFragment.newInstance()) }
-            onHomeworkTileClickListener = { mainActivity.pushView(HomeworkFragment.newInstance()) }
+            onGradeTileClickListener = { mainActivity.navigateToDestination(R.id.gradeFragment) }
+            onHomeworkTileClickListener =
+                { mainActivity.navigateToDestination(R.id.homeworkFragment) }
             onAnnouncementsTileClickListener = {
-                mainActivity.pushView(SchoolAnnouncementFragment.newInstance())
+                mainActivity.navigateToDestination(R.id.schoolAnnouncementFragment)
             }
-            onExamsTileClickListener = { mainActivity.pushView(ExamFragment.newInstance()) }
-            onConferencesTileClickListener = {
-                mainActivity.pushView(ConferenceFragment.newInstance())
-            }
+            onExamsTileClickListener = { mainActivity.navigateToDestination(R.id.examFragment) }
+            onConferencesTileClickListener =
+                { mainActivity.navigateToDestination(R.id.conferenceFragment) }
         }
 
         with(binding) {

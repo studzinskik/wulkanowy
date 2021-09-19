@@ -19,30 +19,28 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
+import androidx.navigation.NavController
+import androidx.navigation.NavDirections
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.setupWithNavController
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import com.google.android.material.elevation.ElevationOverlayProvider
-import com.ncapdevi.fragnav.FragNavController
-import com.ncapdevi.fragnav.FragNavController.Companion.HIDE
 import dagger.hilt.android.AndroidEntryPoint
+import io.github.wulkanowy.MainNavGraphDirections
 import io.github.wulkanowy.R
 import io.github.wulkanowy.data.db.entities.Student
 import io.github.wulkanowy.data.db.entities.StudentWithSemesters
+import io.github.wulkanowy.data.db.entities.StudentsWrapper
 import io.github.wulkanowy.databinding.ActivityMainBinding
 import io.github.wulkanowy.ui.base.BaseActivity
-import io.github.wulkanowy.ui.modules.account.accountquick.AccountQuickDialog
-import io.github.wulkanowy.ui.modules.attendance.AttendanceFragment
 import io.github.wulkanowy.ui.modules.conference.ConferenceFragment
-import io.github.wulkanowy.ui.modules.dashboard.DashboardFragment
 import io.github.wulkanowy.ui.modules.exam.ExamFragment
-import io.github.wulkanowy.ui.modules.grade.GradeFragment
 import io.github.wulkanowy.ui.modules.homework.HomeworkFragment
 import io.github.wulkanowy.ui.modules.luckynumber.LuckyNumberFragment
 import io.github.wulkanowy.ui.modules.message.MessageFragment
-import io.github.wulkanowy.ui.modules.more.MoreFragment
 import io.github.wulkanowy.ui.modules.note.NoteFragment
 import io.github.wulkanowy.ui.modules.schoolannouncement.SchoolAnnouncementFragment
-import io.github.wulkanowy.ui.modules.timetable.TimetableFragment
 import io.github.wulkanowy.utils.AnalyticsHelper
 import io.github.wulkanowy.utils.AppInfo
 import io.github.wulkanowy.utils.InAppReviewHelper
@@ -50,10 +48,10 @@ import io.github.wulkanowy.utils.UpdateHelper
 import io.github.wulkanowy.utils.createNameInitialsDrawable
 import io.github.wulkanowy.utils.dpToPx
 import io.github.wulkanowy.utils.getThemeAttrColor
+import io.github.wulkanowy.utils.navigateToConnectedAction
 import io.github.wulkanowy.utils.nickOrName
-import io.github.wulkanowy.utils.safelyPopFragments
-import io.github.wulkanowy.utils.setOnViewChangeListener
 import timber.log.Timber
+import java.io.Serializable
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -79,8 +77,7 @@ class MainActivity : BaseActivity<MainPresenter, ActivityMainBinding>(), MainVie
 
     private val overlayProvider by lazy { ElevationOverlayProvider(this) }
 
-    private val navController =
-        FragNavController(supportFragmentManager, R.id.main_fragment_container)
+    private lateinit var navController: NavController
 
     companion object {
         const val EXTRA_START_MENU = "extraStartMenu"
@@ -95,16 +92,16 @@ class MainActivity : BaseActivity<MainPresenter, ActivityMainBinding>(), MainVie
         }
     }
 
-    override val isRootView get() = navController.isRootFragment
+    override val isRootView get() = false//navController.isRootFragment
 
-    override val currentStackSize get() = navController.currentStack?.size
+    override val currentStackSize get() = 0//navController.currentStack?.size
 
-    override val currentViewTitle
-        get() = (navController.currentFrag as? MainView.TitledView)?.titleStringId?.let {
-            getString(it)
-        }
+    override val currentViewTitle = ""
+//        get() = (navController.currentFrag as? MainView.TitledView)?.titleStringId?.let {
+//            getString(it)
+//        }
 
-    override val currentViewSubtitle get() = (navController.currentFrag as? MainView.TitledView)?.subtitleString
+    override val currentViewSubtitle get() = "" //(navController.currentFrag as? MainView.TitledView)?.subtitleString
 
     override var startMenuIndex = 0
 
@@ -131,12 +128,11 @@ class MainActivity : BaseActivity<MainPresenter, ActivityMainBinding>(), MainVie
         val section = MainView.Section.values()
             .singleOrNull { it.id == intent.getIntExtra(EXTRA_START_MENU, -1) }
 
-        presenter.onAttachView(this, section)
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.main_fragment_container)
+        navController = (navHostFragment as NavHostFragment).navController
+        binding.mainBottomNav.setupWithNavController(navController)
 
-        with(navController) {
-            initialize(startMenuIndex, savedInstanceState)
-            pushFragment(moreMenuFragments[startMenuMoreIndex])
-        }
+        presenter.onAttachView(this, section)
 
         if (appInfo.systemVersion >= Build.VERSION_CODES.N_MR1) {
             initShortcuts()
@@ -224,50 +220,49 @@ class MainActivity : BaseActivity<MainPresenter, ActivityMainBinding>(), MainVie
 
         with(binding.mainBottomNav) {
             with(menu) {
-                add(Menu.NONE, 0, Menu.NONE, R.string.dashboard_title)
+                add(Menu.NONE, R.id.dashboardFragment, 0, R.string.dashboard_title)
                     .setIcon(R.drawable.ic_main_dashboard)
-                add(Menu.NONE, 1, Menu.NONE, R.string.grade_title)
+                add(Menu.NONE, R.id.gradeFragment, 1, R.string.grade_title)
                     .setIcon(R.drawable.ic_main_grade)
-                add(Menu.NONE, 2, Menu.NONE, R.string.attendance_title)
+                add(Menu.NONE, R.id.attendanceFragment, 2, R.string.attendance_title)
                     .setIcon(R.drawable.ic_main_attendance)
-                add(Menu.NONE, 3, Menu.NONE, R.string.timetable_title)
+                add(Menu.NONE, R.id.timetableFragment, 3, R.string.timetable_title)
                     .setIcon(R.drawable.ic_main_timetable)
-                add(Menu.NONE, 4, Menu.NONE, R.string.more_title)
+                add(Menu.NONE, 4, 4, R.string.more_title)
                     .setIcon(R.drawable.ic_main_more)
             }
             selectedItemId = startMenuIndex
-            setOnItemSelectedListener { presenter.onTabSelected(it.itemId, false) }
+            setOnItemSelectedListener {
+                it.navigateToConnectedAction(navController)
+                presenter.onTabSelected(it.itemId, false)
+            }
             setOnItemReselectedListener { presenter.onTabSelected(it.itemId, true) }
         }
 
-        with(navController) {
-            setOnViewChangeListener { section, name ->
-                if (section == MainView.Section.ACCOUNT || section == MainView.Section.STUDENT_INFO) {
-                    binding.mainBottomNav.isVisible = false
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            if (destination.id == R.id.accountFragment || destination.id == R.id.studentInfoFragment) {
+                binding.mainBottomNav.isVisible = false
 
-                    if (appInfo.systemVersion >= P) {
-                        window.navigationBarColor = getThemeAttrColor(R.attr.colorSurface)
-                    }
-                } else {
-                    binding.mainBottomNav.isVisible = true
-
-                    if (appInfo.systemVersion >= P) {
-                        window.navigationBarColor =
-                            getThemeAttrColor(android.R.attr.navigationBarColor)
-                    }
+                if (appInfo.systemVersion >= P) {
+                    window.navigationBarColor = getThemeAttrColor(R.attr.colorSurface)
                 }
+            } else {
+                binding.mainBottomNav.isVisible = true
 
-                analytics.setCurrentScreen(this@MainActivity, name)
-                presenter.onViewChange(section)
+                if (appInfo.systemVersion >= P) {
+                    window.navigationBarColor = getThemeAttrColor(android.R.attr.navigationBarColor)
+                }
             }
-            fragmentHideStrategy = HIDE
-            rootFragments = listOf(
-                DashboardFragment.newInstance(),
-                GradeFragment.newInstance(),
-                AttendanceFragment.newInstance(),
-                TimetableFragment.newInstance(),
-                MoreFragment.newInstance()
-            )
+
+//            analytics.setCurrentScreen(this@MainActivity, name)
+//            presenter.onViewChange(section)
+//            rootFragments = listOf(
+//                DashboardFragment.newInstance(),
+//                GradeFragment.newInstance(),
+//                AttendanceFragment.newInstance(),
+//                TimetableFragment.newInstance(),
+//                MoreFragment.newInstance()
+//            )
         }
     }
 
@@ -293,8 +288,8 @@ class MainActivity : BaseActivity<MainPresenter, ActivityMainBinding>(), MainVie
     override fun switchMenuView(position: Int) {
         if (supportFragmentManager.isStateSaved) return
 
-        analytics.popCurrentScreen(navController.currentFrag!!::class.simpleName)
-        navController.switchTab(position)
+//        analytics.popCurrentScreen(navController.currentFrag!!::class.simpleName)
+//        navController.switchTab(position)
     }
 
     override fun setViewTitle(title: String) {
@@ -310,7 +305,9 @@ class MainActivity : BaseActivity<MainPresenter, ActivityMainBinding>(), MainVie
     }
 
     override fun showAccountPicker(studentWithSemesters: List<StudentWithSemesters>) {
-        showDialogFragment(AccountQuickDialog.newInstance(studentWithSemesters))
+        navigateToDestination(
+            MainNavGraphDirections.actionToSwitchDialog(StudentsWrapper(studentWithSemesters))
+        )
     }
 
     override fun showActionBarElevation(show: Boolean) {
@@ -318,12 +315,12 @@ class MainActivity : BaseActivity<MainPresenter, ActivityMainBinding>(), MainVie
     }
 
     override fun notifyMenuViewReselected() {
-        (navController.currentStack?.getOrNull(0) as? MainView.MainChildView)?.onFragmentReselected()
+//        (navController.currentStack?.getOrNull(0) as? MainView.MainChildView)?.onFragmentReselected()
     }
 
     override fun notifyMenuViewChanged() {
         Timber.d("Menu view changed")
-        (navController.currentStack?.getOrNull(0) as? MainView.MainChildView)?.onFragmentChanged()
+//        (navController.currentStack?.getOrNull(0) as? MainView.MainChildView)?.onFragmentChanged()
     }
 
     @Suppress("DEPRECATION")
@@ -331,28 +328,38 @@ class MainActivity : BaseActivity<MainPresenter, ActivityMainBinding>(), MainVie
         if (supportFragmentManager.isStateSaved) return
 
         //Deprecated method is used here to avoid fragnav bug
-        if (navController.currentDialogFrag?.fragmentManager == null) {
-            FragNavController::class.java.getDeclaredField("mCurrentDialogFrag").apply {
-                isAccessible = true
-                set(navController, null)
-            }
-        }
+//        if (navController.currentDialogFrag?.fragmentManager == null) {
+//            FragNavController::class.java.getDeclaredField("mCurrentDialogFrag").apply {
+//                isAccessible = true
+//                set(navController, null)
+//            }
+//        }
 
-        navController.showDialogFragment(dialog)
+//        navController.showDialogFragment(dialog)
     }
 
+    fun navigateToDestination(command: NavDirections) {
+        navController.navigate(command)
+    }
+
+    fun navigateToDestination(id: Int) {
+        navController.navigate(id)
+    }
+
+    @Deprecated("use navigateToDestination")
     fun pushView(fragment: Fragment) {
         if (supportFragmentManager.isStateSaved) return
 
-        analytics.popCurrentScreen(navController.currentFrag!!::class.simpleName)
-        navController.pushFragment(fragment)
+//        analytics.popCurrentScreen(navController.currentFrag!!::class.simpleName)
+//        navController.pushFragment(fragment)
     }
 
     override fun popView(depth: Int) {
         if (supportFragmentManager.isStateSaved) return
 
-        analytics.popCurrentScreen(navController.currentFrag!!::class.simpleName)
-        navController.safelyPopFragments(depth)
+//        analytics.popCurrentScreen(navController.currentFrag!!::class.simpleName)
+//        navController.safelyPopFragments(depth)
+        navController.navigateUp()
     }
 
     override fun onBackPressed() {
@@ -372,7 +379,6 @@ class MainActivity : BaseActivity<MainPresenter, ActivityMainBinding>(), MainVie
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        navController.onSaveInstanceState(outState)
         intent.removeExtra(EXTRA_START_MENU)
     }
 }

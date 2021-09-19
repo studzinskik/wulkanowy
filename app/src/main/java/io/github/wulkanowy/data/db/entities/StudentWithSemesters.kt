@@ -11,3 +11,7 @@ data class StudentWithSemesters(
     @Relation(parentColumn = "student_id", entityColumn = "student_id")
     val semesters: List<Semester>
 ) : Serializable
+
+data class StudentsWrapper(
+    val items: List<StudentWithSemesters>
+) : Serializable

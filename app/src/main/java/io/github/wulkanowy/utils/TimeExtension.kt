@@ -1,5 +1,6 @@
 package io.github.wulkanowy.utils
 
+import java.io.Serializable
 import java.text.SimpleDateFormat
 import java.time.DayOfWeek.FRIDAY
 import java.time.DayOfWeek.MONDAY
@@ -43,6 +44,8 @@ fun Month.getFormattedName(): String {
     val date = LocalDateTime.now().withMonth(value)
     return formatter.format(date.toInstant(ZoneOffset.UTC).toEpochMilli()).capitalise()
 }
+
+data class LocalDateWrapper(val value: LocalDate) : Serializable
 
 inline val LocalDate.nextSchoolDay: LocalDate
     get() {
