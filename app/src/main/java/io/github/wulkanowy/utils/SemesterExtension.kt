@@ -6,11 +6,17 @@ import java.time.LocalDate.now
 inline val Semester.isNow: Boolean
     get() = now() in start..end
 
+inline val Semester.willBe: Boolean
+    get() = now() < start && now().plusMonths(3) > start
+
 fun List<Semester>.getCurrentOrLast(): Semester {
     if (isEmpty()) throw RuntimeException("Empty semester list")
 
     // when there is selected semester in settings
     singleOrNull { it.current }?.let { return it }
+
+    // when there is selected semester in settings
+    singleOrNull { it.willBe && now().isHolidays }?.let { return it }
 
     // when there is only one current semester
     singleOrNull { it.isNow }?.let { return it }

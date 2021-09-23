@@ -15,10 +15,13 @@ import io.github.wulkanowy.ui.modules.studentinfo.StudentInfoView
 import io.github.wulkanowy.utils.afterLoading
 import io.github.wulkanowy.utils.flowWithResource
 import io.github.wulkanowy.utils.getCurrentOrLast
+import io.github.wulkanowy.utils.isHolidays
 import io.github.wulkanowy.utils.isNow
+import io.github.wulkanowy.utils.willBe
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import timber.log.Timber
+import java.time.LocalDate
 import javax.inject.Inject
 
 class AccountDetailsPresenter @Inject constructor(
@@ -70,12 +73,12 @@ class AccountDetailsPresenter @Inject constructor(
 
     fun onSemesterSelected(index: Int) {
         if (selectedIndex != index + 1) {
-            Timber.i("Change semester in grade view to ${index + 1} from ${selectedIndex}")
+            Timber.i("Change semester in grade view to ${index + 1} from $selectedIndex")
             val semestersToChange = listOf(
                 studentWithSemesters!!.semesters[index],
                 studentWithSemesters!!.semesters[selectedIndex - 1]
             )
-            if (!semestersToChange[0].isNow) {
+            if ((!semestersToChange[0].isNow && !(semestersToChange[0].willBe && LocalDate.now().isHolidays)) || !(semestersToChange[0].willBe && LocalDate.now().isHolidays)) {
                 preferencesRepository.previewText =
                     semestersToChange[0].diaryName + " / " + semestersToChange[0].semesterName
                 semestersToChange[0].current = true
