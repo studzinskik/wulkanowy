@@ -424,6 +424,7 @@
     <string name="account_contact">Contact</string>
     <string name="account_address">Residence details</string>
     <string name="account_personal_data">Personal information</string>
+    <string name="account_semester">Semester %d %s</string>
 
 
     <!--About-->

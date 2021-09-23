@@ -8,7 +8,7 @@ import io.github.wulkanowy.sdk.Sdk
 import io.github.wulkanowy.utils.DispatchersProvider
 import io.github.wulkanowy.utils.getCurrentOrLast
 import io.github.wulkanowy.utils.init
-import io.github.wulkanowy.utils.isCurrent
+import io.github.wulkanowy.utils.isNow
 import io.github.wulkanowy.utils.uniqueSubtract
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -45,11 +45,11 @@ class SemesterRepository @Inject constructor(
 
         val isRefreshOnModeChangeRequired =
             if (Sdk.Mode.valueOf(student.loginMode) != Sdk.Mode.API) {
-                semesters.firstOrNull { it.isCurrent }?.diaryId == 0
+                semesters.firstOrNull { it.isNow }?.diaryId == 0
             } else false
 
         val isRefreshOnNoCurrentAppropriate =
-            refreshOnNoCurrent && !semesters.any { semester -> semester.isCurrent }
+            refreshOnNoCurrent && !semesters.any { semester -> semester.isNow }
 
         return forceRefresh || isNoSemesters || isRefreshOnModeChangeRequired || isRefreshOnNoCurrentAppropriate
     }
@@ -67,4 +67,6 @@ class SemesterRepository @Inject constructor(
         withContext(dispatchers.backgroundThread) {
             getSemesters(student, forceRefresh).getCurrentOrLast()
         }
+
+    suspend fun updateSemester(semesters: List<Semester>) = semesterDb.updateAll(semesters)
 }

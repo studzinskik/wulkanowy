@@ -10,6 +10,7 @@ import androidx.core.view.get
 import androidx.core.view.isVisible
 import dagger.hilt.android.AndroidEntryPoint
 import io.github.wulkanowy.R
+import io.github.wulkanowy.data.db.entities.Semester
 import io.github.wulkanowy.data.db.entities.Student
 import io.github.wulkanowy.data.db.entities.StudentWithSemesters
 import io.github.wulkanowy.databinding.FragmentAccountDetailsBinding
@@ -80,10 +81,21 @@ class AccountDetailsFragment :
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return if (item.itemId == R.id.accountDetailsMenuEdit) {
-            presenter.onAccountEditSelected()
-            true
-        } else false
+        return when (item.itemId) {
+            R.id.accountDetailsMenuEdit -> {
+                presenter.onAccountEditSelected()
+                true
+            }
+            R.id.accountDetailsMenuSemester -> {
+                presenter.onSemesterSwitch()
+                true
+            }
+            else -> false
+        }
+    }
+
+    override fun notifySemesterChange() {
+        recreateMainView()
     }
 
     override fun showAccountData(student: Student) {
@@ -97,6 +109,29 @@ class AccountDetailsFragment :
                     student.avatarColor
                 )
             )
+        }
+    }
+
+    override fun showSemesterDialog(selectedIndex: Int, semesters: List<Semester>) {
+        val choices =
+            semesters.map { getString(R.string.account_semester, it.semesterName, it.diaryName) }
+                .toTypedArray()
+
+        AlertDialog.Builder(requireContext())
+            .setSingleChoiceItems(choices, selectedIndex) { dialog, which ->
+                presenter.onSemesterSelected(which)
+                dialog.dismiss()
+            }
+            .setTitle(R.string.grade_switch_semester)
+            .setNegativeButton(android.R.string.cancel) { _, _ -> }
+            .show()
+    }
+
+    override fun setCurrentSemesterName(semester: Int, schoolYear: Int) {
+        subtitleString = getString(R.string.grade_subtitle, semester, schoolYear, schoolYear + 1)
+
+        if (isVisible) {
+            (activity as MainView?)?.setViewSubTitle(subtitleString)
         }
     }
 

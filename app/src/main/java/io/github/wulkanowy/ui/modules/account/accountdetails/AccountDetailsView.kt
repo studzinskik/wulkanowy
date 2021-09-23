@@ -1,5 +1,6 @@
 package io.github.wulkanowy.ui.modules.account.accountdetails
 
+import io.github.wulkanowy.data.db.entities.Semester
 import io.github.wulkanowy.data.db.entities.Student
 import io.github.wulkanowy.data.db.entities.StudentWithSemesters
 import io.github.wulkanowy.ui.base.BaseView
@@ -12,6 +13,12 @@ interface AccountDetailsView : BaseView {
     fun showAccountData(student: Student)
 
     fun showAccountEditDetailsDialog(student: Student)
+
+    fun showSemesterDialog(selectedIndex: Int, semesters: List<Semester>)
+
+    fun setCurrentSemesterName(semester: Int, schoolYear: Int)
+
+    fun notifySemesterChange()
 
     fun showLogoutConfirmDialog()
 

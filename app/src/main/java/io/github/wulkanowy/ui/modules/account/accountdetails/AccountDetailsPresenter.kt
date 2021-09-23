@@ -2,8 +2,10 @@ package io.github.wulkanowy.ui.modules.account.accountdetails
 
 import io.github.wulkanowy.data.Resource
 import io.github.wulkanowy.data.Status
+import io.github.wulkanowy.data.db.entities.Semester
 import io.github.wulkanowy.data.db.entities.Student
 import io.github.wulkanowy.data.db.entities.StudentWithSemesters
+import io.github.wulkanowy.data.repositories.SemesterRepository
 import io.github.wulkanowy.data.repositories.StudentRepository
 import io.github.wulkanowy.services.sync.SyncManager
 import io.github.wulkanowy.ui.base.BasePresenter
@@ -11,6 +13,8 @@ import io.github.wulkanowy.ui.base.ErrorHandler
 import io.github.wulkanowy.ui.modules.studentinfo.StudentInfoView
 import io.github.wulkanowy.utils.afterLoading
 import io.github.wulkanowy.utils.flowWithResource
+import io.github.wulkanowy.utils.getCurrentOrLast
+import io.github.wulkanowy.utils.isNow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import timber.log.Timber
@@ -19,10 +23,15 @@ import javax.inject.Inject
 class AccountDetailsPresenter @Inject constructor(
     errorHandler: ErrorHandler,
     studentRepository: StudentRepository,
+    private val semesterRepository: SemesterRepository,
     private val syncManager: SyncManager
 ) : BasePresenter<AccountDetailsView>(errorHandler, studentRepository) {
 
     private var studentWithSemesters: StudentWithSemesters? = null
+
+    private var selectedIndex = 0
+
+    private var schoolYear = 0
 
     private lateinit var lastError: Throwable
 
@@ -50,6 +59,48 @@ class AccountDetailsPresenter @Inject constructor(
         view?.showErrorDetailsDialog(lastError)
     }
 
+    fun onSemesterSwitch(): Boolean {
+        if (!studentWithSemesters!!.semesters.isNullOrEmpty()) {
+            view?.showSemesterDialog(selectedIndex - 1, studentWithSemesters!!.semesters)
+        }
+        return true
+    }
+
+    fun onSemesterSelected(index: Int) {
+        if (selectedIndex != index + 1) {
+            Timber.i("Change semester in grade view to ${index + 1} from ${selectedIndex}")
+            val semestersToChange = listOf(
+                studentWithSemesters!!.semesters[index],
+                studentWithSemesters!!.semesters[selectedIndex - 1]
+            )
+            if (!semestersToChange[0].isNow) semestersToChange[0].current = true
+            semestersToChange[1].current = false
+            changeSemester(semestersToChange)
+        }
+    }
+
+    private fun changeSemester(
+        semesters: List<Semester>
+    ) {
+        flowWithResource {
+            semesterRepository.updateSemester(semesters)
+        }.onEach {
+            when (it.status) {
+                Status.LOADING -> Timber.i("Semester update start")
+                Status.SUCCESS -> {
+                    Timber.i("Semester update: Success")
+                    view?.run {
+                        recreateMainView()
+                    }
+                }
+                Status.ERROR -> {
+                    Timber.i("Semester update result: An exception occurred")
+                    errorHandler.dispatch(it.error!!)
+                }
+            }
+        }.launch("semester")
+    }
+
     private fun loadData() {
         flowWithResource { studentRepository.getSavedStudents() }
             .map { studentWithSemesters ->
@@ -71,7 +122,11 @@ class AccountDetailsPresenter @Inject constructor(
                     Status.SUCCESS -> {
                         Timber.i("Loading account details view result: Success")
                         studentWithSemesters = it.data
+                        val current = it.data!!.semesters.getCurrentOrLast()
+                        schoolYear = current.schoolYear
+                        selectedIndex = it.data.semesters.indexOf(current) + 1
                         view?.run {
+                            setCurrentSemesterName(current.semesterId, schoolYear)
                             showAccountData(studentWithSemesters!!.student)
                             enableSelectStudentButton(!studentWithSemesters!!.student.isCurrent)
                             showContent(true)
