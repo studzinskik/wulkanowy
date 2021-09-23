@@ -57,7 +57,8 @@ class AttendancePresenter @Inject constructor(
         errorHandler.showErrorMessage = ::showErrorViewOnError
         reloadView(ofEpochDay(date ?: baseDate.toEpochDay()))
         loadData()
-        if (currentDate.isHolidays) setBaseDateOnHolidays()
+        if (prefRepository.previewText.isNotBlank()) setLastSemesterDay()
+        else if (currentDate.isHolidays) setBaseDateOnHolidays()
     }
 
     fun onPreviousDay() {
@@ -189,6 +190,18 @@ class AttendancePresenter @Inject constructor(
     fun onSummarySwitchSelected(): Boolean {
         view?.openSummaryView()
         return true
+    }
+
+    private fun setLastSemesterDay() {
+        flow {
+            val student = studentRepository.getCurrentStudent()
+            emit(semesterRepository.getCurrentSemester(student))
+        }.catch {
+            Timber.i("Loading semester result: An exception occurred")
+        }.onEach {
+            currentDate = it.end
+            reloadNavigation()
+        }.launch("semester")
     }
 
     private fun setBaseDateOnHolidays() {

@@ -2,6 +2,7 @@ package io.github.wulkanowy.ui.modules.luckynumber.history
 
 import io.github.wulkanowy.data.Status
 import io.github.wulkanowy.data.repositories.LuckyNumberRepository
+import io.github.wulkanowy.data.repositories.PreferencesRepository
 import io.github.wulkanowy.data.repositories.SemesterRepository
 import io.github.wulkanowy.data.repositories.StudentRepository
 import io.github.wulkanowy.ui.base.BasePresenter
@@ -27,6 +28,7 @@ class LuckyNumberHistoryPresenter @Inject constructor(
     errorHandler: ErrorHandler,
     studentRepository: StudentRepository,
     private val semesterRepository: SemesterRepository,
+    private val preferencesRepository: PreferencesRepository,
     private val luckyNumberRepository: LuckyNumberRepository,
     private val analytics: AnalyticsHelper
 ) : BasePresenter<LuckyNumberHistoryView>(errorHandler, studentRepository) {
@@ -45,7 +47,20 @@ class LuckyNumberHistoryPresenter @Inject constructor(
         Timber.i("Lucky number history view was initialized")
         errorHandler.showErrorMessage = ::showErrorViewOnError
         loadData()
-        if (currentDate.isHolidays) setBaseDateOnHolidays()
+        if (preferencesRepository.previewText.isNotBlank()) setLastSemesterDay()
+        else if (currentDate.isHolidays) setBaseDateOnHolidays()
+    }
+
+    private fun setLastSemesterDay() {
+        flow {
+            val student = studentRepository.getCurrentStudent()
+            emit(semesterRepository.getCurrentSemester(student))
+        }.catch {
+            Timber.i("Loading semester result: An exception occurred")
+        }.onEach {
+            currentDate = it.end
+            reloadNavigation()
+        }.launch("semester")
     }
 
     private fun setBaseDateOnHolidays() {

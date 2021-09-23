@@ -2,6 +2,7 @@ package io.github.wulkanowy.ui.modules.timetable.additional
 
 import android.annotation.SuppressLint
 import io.github.wulkanowy.data.Status
+import io.github.wulkanowy.data.repositories.PreferencesRepository
 import io.github.wulkanowy.data.repositories.SemesterRepository
 import io.github.wulkanowy.data.repositories.StudentRepository
 import io.github.wulkanowy.data.repositories.TimetableRepository
@@ -28,6 +29,7 @@ class AdditionalLessonsPresenter @Inject constructor(
     studentRepository: StudentRepository,
     errorHandler: ErrorHandler,
     private val semesterRepository: SemesterRepository,
+    private val preferencesRepository: PreferencesRepository,
     private val timetableRepository: TimetableRepository,
     private val analytics: AnalyticsHelper
 ) : BasePresenter<AdditionalLessonsView>(errorHandler, studentRepository) {
@@ -45,7 +47,8 @@ class AdditionalLessonsPresenter @Inject constructor(
         Timber.i("Additional lessons was initialized")
         errorHandler.showErrorMessage = ::showErrorViewOnError
         loadData(LocalDate.ofEpochDay(date ?: baseDate.toEpochDay()))
-        if (currentDate.isHolidays) setBaseDateOnHolidays()
+        if (preferencesRepository.previewText.isNotBlank()) setLastSemesterDay()
+        else if (currentDate.isHolidays) setBaseDateOnHolidays()
         reloadView()
     }
 
@@ -83,6 +86,18 @@ class AdditionalLessonsPresenter @Inject constructor(
 
     fun onDetailsClick() {
         view?.showErrorDetailsDialog(lastError)
+    }
+
+    private fun setLastSemesterDay() {
+        flow {
+            val student = studentRepository.getCurrentStudent()
+            emit(semesterRepository.getCurrentSemester(student))
+        }.catch {
+            Timber.i("Loading semester result: An exception occurred")
+        }.onEach {
+            currentDate = it.end
+            reloadNavigation()
+        }.launch("semester")
     }
 
     private fun setBaseDateOnHolidays() {

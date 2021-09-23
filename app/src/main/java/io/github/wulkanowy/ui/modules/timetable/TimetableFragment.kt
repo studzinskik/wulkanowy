@@ -195,7 +195,7 @@ class TimetableFragment : BaseFragment<FragmentTimetableBinding>(R.layout.fragme
     override fun showDatePickerDialog(currentDate: LocalDate) {
         val baseDate = currentDate.schoolYearStart
         val rangeStart = baseDate.toTimestamp()
-        val rangeEnd = LocalDate.now().schoolYearEnd.toTimestamp()
+        val rangeEnd = currentDate.schoolYearEnd.toTimestamp()
 
         val constraintsBuilder = CalendarConstraints.Builder().apply {
             setValidator(SchoolDaysValidator(rangeStart, rangeEnd))

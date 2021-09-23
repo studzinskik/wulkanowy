@@ -132,9 +132,8 @@ class AdditionalLessonsFragment :
     }
 
     override fun showDatePickerDialog(currentDate: LocalDate) {
-        val now = LocalDate.now()
-        val startOfSchoolYear = now.schoolYearStart.toTimestamp()
-        val endOfSchoolYear = now.schoolYearEnd.toTimestamp()
+        val startOfSchoolYear = currentDate.schoolYearStart.toTimestamp()
+        val endOfSchoolYear = currentDate.schoolYearEnd.toTimestamp()
 
         val constraintsBuilder = CalendarConstraints.Builder().apply {
             setValidator(SchoolDaysValidator(startOfSchoolYear, endOfSchoolYear))

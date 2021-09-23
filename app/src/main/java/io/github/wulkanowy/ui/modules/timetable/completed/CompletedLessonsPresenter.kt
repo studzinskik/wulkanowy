@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import io.github.wulkanowy.data.Status
 import io.github.wulkanowy.data.db.entities.CompletedLesson
 import io.github.wulkanowy.data.repositories.CompletedLessonsRepository
+import io.github.wulkanowy.data.repositories.PreferencesRepository
 import io.github.wulkanowy.data.repositories.SemesterRepository
 import io.github.wulkanowy.data.repositories.StudentRepository
 import io.github.wulkanowy.ui.base.BasePresenter
@@ -30,6 +31,7 @@ class CompletedLessonsPresenter @Inject constructor(
     studentRepository: StudentRepository,
     private val completedLessonsErrorHandler: CompletedLessonsErrorHandler,
     private val semesterRepository: SemesterRepository,
+    private val preferencesRepository: PreferencesRepository,
     private val completedLessonsRepository: CompletedLessonsRepository,
     private val analytics: AnalyticsHelper
 ) : BasePresenter<CompletedLessonsView>(completedLessonsErrorHandler, studentRepository) {
@@ -53,7 +55,8 @@ class CompletedLessonsPresenter @Inject constructor(
         }
         reloadView(ofEpochDay(date ?: baseDate.toEpochDay()))
         loadData()
-        if (currentDate.isHolidays) setBaseDateOnHolidays()
+        if (preferencesRepository.previewText.isNotBlank()) setLastSemesterDay()
+        else if (currentDate.isHolidays) setBaseDateOnHolidays()
     }
 
     fun onPreviousDay() {
@@ -95,6 +98,18 @@ class CompletedLessonsPresenter @Inject constructor(
     fun onCompletedLessonsItemSelected(completedLesson: CompletedLesson) {
         Timber.i("Select completed lessons item ${completedLesson.id}")
         view?.showCompletedLessonDialog(completedLesson)
+    }
+
+    private fun setLastSemesterDay() {
+        flow {
+            val student = studentRepository.getCurrentStudent()
+            emit(semesterRepository.getCurrentSemester(student))
+        }.catch {
+            Timber.i("Loading semester result: An exception occurred")
+        }.onEach {
+            currentDate = it.end
+            reloadNavigation()
+        }.launch("semester")
     }
 
     private fun setBaseDateOnHolidays() {

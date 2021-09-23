@@ -3,6 +3,7 @@ package io.github.wulkanowy.ui.modules.homework
 import io.github.wulkanowy.data.Status
 import io.github.wulkanowy.data.db.entities.Homework
 import io.github.wulkanowy.data.repositories.HomeworkRepository
+import io.github.wulkanowy.data.repositories.PreferencesRepository
 import io.github.wulkanowy.data.repositories.SemesterRepository
 import io.github.wulkanowy.data.repositories.StudentRepository
 import io.github.wulkanowy.ui.base.BasePresenter
@@ -27,6 +28,7 @@ import javax.inject.Inject
 class HomeworkPresenter @Inject constructor(
     errorHandler: ErrorHandler,
     studentRepository: StudentRepository,
+    private val preferencesRepository: PreferencesRepository,
     private val homeworkRepository: HomeworkRepository,
     private val semesterRepository: SemesterRepository,
     private val analytics: AnalyticsHelper
@@ -46,7 +48,8 @@ class HomeworkPresenter @Inject constructor(
         errorHandler.showErrorMessage = ::showErrorViewOnError
         reloadView(ofEpochDay(date ?: baseDate.toEpochDay()))
         loadData()
-        if (currentDate.isHolidays) setBaseDateOnHolidays()
+        if (preferencesRepository.previewText.isNotBlank()) setLastSemesterDay()
+        else if (currentDate.isHolidays) setBaseDateOnHolidays()
     }
 
     fun onPreviousDay() {
@@ -79,6 +82,18 @@ class HomeworkPresenter @Inject constructor(
     fun onHomeworkItemSelected(homework: Homework) {
         Timber.i("Select homework item ${homework.id}")
         view?.showTimetableDialog(homework)
+    }
+
+    private fun setLastSemesterDay() {
+        flow {
+            val student = studentRepository.getCurrentStudent()
+            emit(semesterRepository.getCurrentSemester(student))
+        }.catch {
+            Timber.i("Loading semester result: An exception occurred")
+        }.onEach {
+            currentDate = it.end
+            reloadNavigation()
+        }.launch("semester")
     }
 
     private fun setBaseDateOnHolidays() {
