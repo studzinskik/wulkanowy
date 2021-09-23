@@ -78,12 +78,15 @@ class AccountDetailsPresenter @Inject constructor(
                 studentWithSemesters!!.semesters[index],
                 studentWithSemesters!!.semesters[selectedIndex - 1]
             )
-            if ((!semestersToChange[0].isNow && !(semestersToChange[0].willBe && LocalDate.now().isHolidays)) || !(semestersToChange[0].willBe && LocalDate.now().isHolidays)) {
+            if (
+                (!semestersToChange[0].isNow && semestersToChange[0].willBe && LocalDate.now().isHolidays) ||
+                (semestersToChange[0].isNow && !semestersToChange[0].willBe && !LocalDate.now().isHolidays)
+            ) {
+                preferencesRepository.previewText = ""
+            } else {
                 preferencesRepository.previewText =
                     semestersToChange[0].diaryName + " / " + semestersToChange[0].semesterName
                 semestersToChange[0].current = true
-            } else {
-                preferencesRepository.previewText = ""
             }
             semestersToChange[1].current = false
             changeSemester(semestersToChange)
