@@ -11,9 +11,14 @@ import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.Build.VERSION_CODES.P
 import android.os.Bundle
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.BackgroundColorSpan
+import android.text.style.ForegroundColorSpan
 import android.view.Menu
 import android.view.MenuItem
 import androidx.annotation.RequiresApi
+import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import androidx.core.view.ViewCompat
 import androidx.core.view.isVisible
@@ -298,7 +303,32 @@ class MainActivity : BaseActivity<MainPresenter, ActivityMainBinding>(), MainVie
     }
 
     override fun setViewTitle(title: String) {
-        supportActionBar?.title = title
+        val string = SpannableString(title)
+        if (title.contains("/")) {
+            string.setSpan(
+                BackgroundColorSpan(
+                    ContextCompat.getColor(
+                        applicationContext,
+                        R.color.colorPrimaryLight
+                    )
+                ),
+                0,
+                title.length,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            string.setSpan(
+                ForegroundColorSpan(
+                    ContextCompat.getColor(
+                        applicationContext,
+                        R.color.grade_black
+                    )
+                ),
+                0,
+                title.length,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+        supportActionBar?.title = string
     }
 
     override fun setViewSubTitle(subtitle: String?) {

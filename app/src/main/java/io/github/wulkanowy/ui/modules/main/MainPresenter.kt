@@ -67,7 +67,7 @@ class MainPresenter @Inject constructor(
     fun onViewChange(section: MainView.Section?) {
         view?.apply {
             showActionBarElevation(section != GRADE && section != MESSAGE && section != SCHOOL)
-            currentViewTitle?.let { setViewTitle(it) }
+            currentViewTitle?.let { setViewTitle("$it ${prefRepository.previewText}") }
             currentViewSubtitle?.let { setViewSubTitle(it.ifBlank { null }) }
             currentStackSize?.let {
                 if (it > 1) showHomeArrow(true)

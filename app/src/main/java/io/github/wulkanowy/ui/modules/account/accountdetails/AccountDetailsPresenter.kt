@@ -5,6 +5,7 @@ import io.github.wulkanowy.data.Status
 import io.github.wulkanowy.data.db.entities.Semester
 import io.github.wulkanowy.data.db.entities.Student
 import io.github.wulkanowy.data.db.entities.StudentWithSemesters
+import io.github.wulkanowy.data.repositories.PreferencesRepository
 import io.github.wulkanowy.data.repositories.SemesterRepository
 import io.github.wulkanowy.data.repositories.StudentRepository
 import io.github.wulkanowy.services.sync.SyncManager
@@ -24,6 +25,7 @@ class AccountDetailsPresenter @Inject constructor(
     errorHandler: ErrorHandler,
     studentRepository: StudentRepository,
     private val semesterRepository: SemesterRepository,
+    private val preferencesRepository: PreferencesRepository,
     private val syncManager: SyncManager
 ) : BasePresenter<AccountDetailsView>(errorHandler, studentRepository) {
 
@@ -73,7 +75,13 @@ class AccountDetailsPresenter @Inject constructor(
                 studentWithSemesters!!.semesters[index],
                 studentWithSemesters!!.semesters[selectedIndex - 1]
             )
-            if (!semestersToChange[0].isNow) semestersToChange[0].current = true
+            if (!semestersToChange[0].isNow) {
+                preferencesRepository.previewText =
+                    semestersToChange[0].diaryName + " / " + semestersToChange[0].semesterName
+                semestersToChange[0].current = true
+            } else {
+                preferencesRepository.previewText = ""
+            }
             semestersToChange[1].current = false
             changeSemester(semestersToChange)
         }
