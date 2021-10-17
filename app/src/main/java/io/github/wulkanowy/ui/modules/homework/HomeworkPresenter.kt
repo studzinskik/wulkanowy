@@ -81,7 +81,11 @@ class HomeworkPresenter @Inject constructor(
 
     fun onHomeworkItemSelected(homework: Homework) {
         Timber.i("Select homework item ${homework.id}")
-        view?.showTimetableDialog(homework)
+        view?.showHomeworkDialog(homework)
+    }
+
+    fun onHomeworkAddButtonClicked() {
+        view?.showAddHomeworkDialog()
     }
 
     private fun setLastSemesterDay() {

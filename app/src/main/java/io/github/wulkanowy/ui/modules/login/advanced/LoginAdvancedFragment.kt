@@ -51,10 +51,12 @@ class LoginAdvancedFragment :
     private lateinit var hostSymbols: Array<String>
 
     override val formHostValue: String
-        get() = hostValues.getOrNull(hostKeys.indexOf(binding.loginFormHost.text.toString())).orEmpty()
+        get() = hostValues.getOrNull(hostKeys.indexOf(binding.loginFormHost.text.toString()))
+            .orEmpty()
 
     override val formHostSymbol: String
-        get() = hostSymbols.getOrNull(hostKeys.indexOf(binding.loginFormHost.text.toString())).orEmpty()
+        get() = hostSymbols.getOrNull(hostKeys.indexOf(binding.loginFormHost.text.toString()))
+            .orEmpty()
 
     override val formPinValue: String
         get() = binding.loginFormPin.text.toString().trim()
@@ -92,39 +94,62 @@ class LoginAdvancedFragment :
             loginFormSignIn.setOnClickListener { presenter.onSignInClick() }
 
             loginTypeSwitch.setOnCheckedChangeListener { _, checkedId ->
-                presenter.onLoginModeSelected(when (checkedId) {
-                    R.id.loginTypeApi -> Sdk.Mode.API
-                    R.id.loginTypeScrapper -> Sdk.Mode.SCRAPPER
-                    else -> Sdk.Mode.HYBRID
-                })
+                presenter.onLoginModeSelected(
+                    when (checkedId) {
+                        R.id.loginTypeApi -> Sdk.Mode.API
+                        R.id.loginTypeScrapper -> Sdk.Mode.SCRAPPER
+                        else -> Sdk.Mode.HYBRID
+                    }
+                )
             }
 
             loginFormPin.setOnEditorDoneSignIn { loginFormSignIn.callOnClick() }
             loginFormPass.setOnEditorDoneSignIn { loginFormSignIn.callOnClick() }
 
-            loginFormSymbol.setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_list_item_1, resources.getStringArray(R.array.symbols_values)))
+            loginFormSymbol.setAdapter(
+                ArrayAdapter(
+                    requireContext(),
+                    android.R.layout.simple_list_item_1,
+                    resources.getStringArray(R.array.symbols_values)
+                )
+            )
         }
 
         with(binding.loginFormHost) {
             setText(hostKeys.getOrNull(0).orEmpty())
-            setAdapter(LoginSymbolAdapter(context, R.layout.support_simple_spinner_dropdown_item, hostKeys))
+            setAdapter(
+                LoginSymbolAdapter(
+                    context,
+                    R.layout.support_simple_spinner_dropdown_item,
+                    hostKeys
+                )
+            )
             setOnClickListener { if (binding.loginFormContainer.visibility == GONE) dismissDropDown() }
         }
     }
 
     override fun showMobileApiWarningMessage() {
-        binding.loginFormAdvancedWarningInfo.text = getString(R.string.login_advanced_warning_mobile_api)
+        binding.loginFormAdvancedWarningInfo.text =
+            getString(R.string.login_advanced_warning_mobile_api)
     }
 
     override fun showScraperWarningMessage() {
-        binding.loginFormAdvancedWarningInfo.text = getString(R.string.login_advanced_warning_scraper)
+        binding.loginFormAdvancedWarningInfo.text =
+            getString(R.string.login_advanced_warning_scraper)
     }
 
     override fun showHybridWarningMessage() {
-        binding.loginFormAdvancedWarningInfo.text = getString(R.string.login_advanced_warning_hybrid)
+        binding.loginFormAdvancedWarningInfo.text =
+            getString(R.string.login_advanced_warning_hybrid)
     }
 
-    override fun setDefaultCredentials(username: String, pass: String, symbol: String, token: String, pin: String) {
+    override fun setDefaultCredentials(
+        username: String,
+        pass: String,
+        symbol: String,
+        token: String,
+        pin: String
+    ) {
         with(binding) {
             loginFormUsername.setText(username)
             loginFormPass.setText(pass)
@@ -145,7 +170,7 @@ class LoginAdvancedFragment :
     override fun setErrorUsernameRequired() {
         with(binding.loginFormUsernameLayout) {
             requestFocus()
-            error = getString(R.string.login_field_required)
+            error = getString(R.string.error_field_required)
         }
     }
 
@@ -166,7 +191,7 @@ class LoginAdvancedFragment :
     override fun setErrorPassRequired(focus: Boolean) {
         with(binding.loginFormPassLayout) {
             if (focus) requestFocus()
-            error = getString(R.string.login_field_required)
+            error = getString(R.string.error_field_required)
         }
     }
 
@@ -177,17 +202,17 @@ class LoginAdvancedFragment :
         }
     }
 
-    override fun setErrorPassIncorrect() {
+    override fun setErrorPassIncorrect(message: String?) {
         with(binding.loginFormPassLayout) {
             requestFocus()
-            error = getString(R.string.login_incorrect_password)
+            error = message ?: getString(R.string.login_incorrect_password)
         }
     }
 
     override fun setErrorPinRequired() {
         with(binding.loginFormPinLayout) {
             requestFocus()
-            error = getString(R.string.login_field_required)
+            error = getString(R.string.error_field_required)
         }
     }
 
@@ -201,7 +226,7 @@ class LoginAdvancedFragment :
     override fun setErrorSymbolRequired() {
         with(binding.loginFormSymbolLayout) {
             requestFocus()
-            error = getString(R.string.login_field_required)
+            error = getString(R.string.error_field_required)
         }
     }
 
@@ -215,7 +240,7 @@ class LoginAdvancedFragment :
     override fun setErrorTokenRequired() {
         with(binding.loginFormTokenLayout) {
             requestFocus()
-            error = getString(R.string.login_field_required)
+            error = getString(R.string.error_field_required)
         }
     }
 
@@ -296,11 +321,13 @@ class LoginAdvancedFragment :
     }
 
     override fun notifyParentAccountLogged(studentsWithSemesters: List<StudentWithSemesters>) {
-        (activity as? LoginActivity)?.onFormFragmentAccountLogged(studentsWithSemesters, Triple(
-            binding.loginFormUsername.text.toString(),
-            binding.loginFormPass.text.toString(),
-            resources.getStringArray(R.array.hosts_values)[1]
-        ))
+        (activity as? LoginActivity)?.onFormFragmentAccountLogged(
+            studentsWithSemesters, Triple(
+                binding.loginFormUsername.text.toString(),
+                binding.loginFormPass.text.toString(),
+                resources.getStringArray(R.array.hosts_values)[1]
+            )
+        )
     }
 
     override fun onResume() {

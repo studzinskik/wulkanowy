@@ -1,7 +1,6 @@
 package io.github.wulkanowy.data.repositories
 
 import android.content.Context
-import com.squareup.moshi.Moshi
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.wulkanowy.R
 import io.github.wulkanowy.data.Resource
@@ -18,7 +17,6 @@ import io.github.wulkanowy.data.enums.MessageFolder.RECEIVED
 import io.github.wulkanowy.data.mappers.mapFromEntities
 import io.github.wulkanowy.data.mappers.mapToEntities
 import io.github.wulkanowy.data.pojos.MessageDraft
-import io.github.wulkanowy.data.pojos.MessageDraftJsonAdapter
 import io.github.wulkanowy.sdk.Sdk
 import io.github.wulkanowy.sdk.pojo.Folder
 import io.github.wulkanowy.sdk.pojo.SentMessage
@@ -29,6 +27,9 @@ import io.github.wulkanowy.utils.networkBoundResource
 import io.github.wulkanowy.utils.uniqueSubtract
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import timber.log.Timber
 import java.time.LocalDateTime.now
 import javax.inject.Inject
@@ -42,7 +43,7 @@ class MessageRepository @Inject constructor(
     @ApplicationContext private val context: Context,
     private val refreshHelper: AutoRefreshHelper,
     private val sharedPrefProvider: SharedPrefProvider,
-    private val moshi: Moshi,
+    private val json: Json,
 ) {
 
     private val saveFetchResultMutex = Mutex()
@@ -51,14 +52,18 @@ class MessageRepository @Inject constructor(
 
     @Suppress("UNUSED_PARAMETER")
     fun getMessages(
-        student: Student, semester: Semester,
-        folder: MessageFolder, forceRefresh: Boolean, notify: Boolean = false
+        student: Student,
+        semester: Semester,
+        folder: MessageFolder,
+        forceRefresh: Boolean,
+        notify: Boolean = false,
     ): Flow<Resource<List<Message>>> = networkBoundResource(
         mutex = saveFetchResultMutex,
         shouldFetch = {
-            it.isEmpty() || forceRefresh || refreshHelper.isShouldBeRefreshed(
-                getRefreshKey(cacheKey, student, folder)
+            val isExpired = refreshHelper.shouldBeRefreshed(
+                key = getRefreshKey(cacheKey, student, folder)
             )
+            it.isEmpty() || forceRefresh || isExpired
         },
         query = { messagesDb.loadAll(student.id.toInt(), folder.id) },
         fetch = {
@@ -77,7 +82,8 @@ class MessageRepository @Inject constructor(
     )
 
     private fun getMessagesWithReadByChange(
-        old: List<Message>, new: List<Message>,
+        old: List<Message>,
+        new: List<Message>,
         setNotified: Boolean
     ): List<Message> {
         val oldMeta = old.map { Triple(it, it.readBy, it.unreadBy) }
@@ -96,7 +102,9 @@ class MessageRepository @Inject constructor(
     }
 
     fun getMessage(
-        student: Student, message: Message, markAsRead: Boolean = false
+        student: Student,
+        message: Message,
+        markAsRead: Boolean = false,
     ): Flow<Resource<MessageWithAttachment?>> = networkBoundResource(
         shouldFetch = {
             checkNotNull(it, { "This message no longer exist!" })
@@ -135,8 +143,10 @@ class MessageRepository @Inject constructor(
     }
 
     suspend fun sendMessage(
-        student: Student, subject: String, content: String,
-        recipients: List<Recipient>
+        student: Student,
+        subject: String,
+        content: String,
+        recipients: List<Recipient>,
     ): SentMessage = sdk.init(student).sendMessage(
         subject = subject,
         content = content,
@@ -159,9 +169,9 @@ class MessageRepository @Inject constructor(
 
     var draftMessage: MessageDraft?
         get() = sharedPrefProvider.getString(context.getString(R.string.pref_key_message_send_draft))
-            ?.let { MessageDraftJsonAdapter(moshi).fromJson(it) }
+            ?.let { json.decodeFromString(it) }
         set(value) = sharedPrefProvider.putString(
             context.getString(R.string.pref_key_message_send_draft),
-            value?.let { MessageDraftJsonAdapter(moshi).toJson(it) }
+            value?.let { json.encodeToString(it) }
         )
 }

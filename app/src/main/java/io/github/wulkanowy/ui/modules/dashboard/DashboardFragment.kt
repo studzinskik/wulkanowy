@@ -10,6 +10,7 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import dagger.hilt.android.AndroidEntryPoint
 import io.github.wulkanowy.R
 import io.github.wulkanowy.databinding.FragmentDashboardBinding
@@ -24,10 +25,12 @@ import io.github.wulkanowy.ui.modules.luckynumber.LuckyNumberFragment
 import io.github.wulkanowy.ui.modules.main.MainActivity
 import io.github.wulkanowy.ui.modules.main.MainView
 import io.github.wulkanowy.ui.modules.message.MessageFragment
+import io.github.wulkanowy.ui.modules.notificationscenter.NotificationsCenterFragment
 import io.github.wulkanowy.ui.modules.schoolannouncement.SchoolAnnouncementFragment
 import io.github.wulkanowy.ui.modules.timetable.TimetableFragment
 import io.github.wulkanowy.utils.capitalise
 import io.github.wulkanowy.utils.getThemeAttrColor
+import io.github.wulkanowy.utils.openInternetBrowser
 import io.github.wulkanowy.utils.toFormattedString
 import java.time.LocalDate
 import javax.inject.Inject
@@ -96,6 +99,13 @@ class DashboardFragment : BaseFragment<FragmentDashboardBinding>(R.layout.fragme
             onConferencesTileClickListener = {
                 mainActivity.pushView(ConferenceFragment.newInstance())
             }
+            onAdminMessageClickListener = presenter::onAdminMessageSelected
+
+            registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
+                override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
+                    binding.dashboardRecycler.scrollToPosition(0)
+                }
+            })
         }
 
         with(binding) {
@@ -120,6 +130,7 @@ class DashboardFragment : BaseFragment<FragmentDashboardBinding>(R.layout.fragme
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.dashboard_menu_tiles -> presenter.onDashboardTileSettingsSelected()
+            R.id.dashboard_menu_notifaction_list -> presenter.onNotificationsCenterSelected()
             else -> false
         }
     }
@@ -180,6 +191,14 @@ class DashboardFragment : BaseFragment<FragmentDashboardBinding>(R.layout.fragme
 
     override fun onFragmentReselected() {
         if (::presenter.isInitialized) presenter.onViewReselected()
+    }
+
+    override fun openNotificationsCenterView() {
+        (requireActivity() as MainActivity).pushView(NotificationsCenterFragment.newInstance())
+    }
+
+    override fun openInternetBrowser(url: String) {
+        requireContext().openInternetBrowser(url)
     }
 
     override fun onDestroyView() {
