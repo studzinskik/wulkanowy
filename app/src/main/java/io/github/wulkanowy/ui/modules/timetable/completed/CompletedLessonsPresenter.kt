@@ -108,8 +108,8 @@ class CompletedLessonsPresenter @Inject constructor(
         }.catch {
             Timber.i("Loading semester result: An exception occurred")
         }.onEach {
-            currentDate = it.end.lastSchoolDay
-            reloadNavigation()
+            baseDate = it.end.lastSchoolDay
+            reloadView(baseDate)
         }.launch("semester")
     }
 

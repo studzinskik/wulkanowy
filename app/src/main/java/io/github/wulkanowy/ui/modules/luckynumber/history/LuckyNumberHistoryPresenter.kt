@@ -60,7 +60,7 @@ class LuckyNumberHistoryPresenter @Inject constructor(
             Timber.i("Loading semester result: An exception occurred")
         }.onEach {
             currentDate = it.end.lastSchoolDay
-            reloadNavigation()
+            reloadView(currentDate)
         }.launch("semester")
     }
 
