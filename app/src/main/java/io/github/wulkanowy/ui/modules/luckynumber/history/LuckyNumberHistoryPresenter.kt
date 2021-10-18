@@ -12,6 +12,7 @@ import io.github.wulkanowy.utils.afterLoading
 import io.github.wulkanowy.utils.flowWithResource
 import io.github.wulkanowy.utils.getLastSchoolDayIfHoliday
 import io.github.wulkanowy.utils.isHolidays
+import io.github.wulkanowy.utils.lastSchoolDay
 import io.github.wulkanowy.utils.monday
 import io.github.wulkanowy.utils.previousOrSameSchoolDay
 import io.github.wulkanowy.utils.sunday
@@ -58,7 +59,7 @@ class LuckyNumberHistoryPresenter @Inject constructor(
         }.catch {
             Timber.i("Loading semester result: An exception occurred")
         }.onEach {
-            currentDate = it.end
+            currentDate = it.end.lastSchoolDay
             reloadNavigation()
         }.launch("semester")
     }

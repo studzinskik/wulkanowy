@@ -158,6 +158,7 @@ class CompletedLessonsFragment :
 
         val constraintsBuilder = CalendarConstraints.Builder().apply {
             setValidator(SchoolDaysValidator(startOfSchoolYear, endOfSchoolYear))
+            setOpenAt(currentDate.toTimestamp())
             setStart(startOfSchoolYear)
             setEnd(endOfSchoolYear)
         }

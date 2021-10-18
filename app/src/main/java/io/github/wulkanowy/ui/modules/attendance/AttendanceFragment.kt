@@ -232,6 +232,7 @@ class AttendanceFragment : BaseFragment<FragmentAttendanceBinding>(R.layout.frag
 
         val constraintsBuilder = CalendarConstraints.Builder().apply {
             setValidator(SchoolDaysValidator(rangeStart, rangeEnd))
+            setOpenAt(currentDate.toTimestamp())
             setStart(rangeStart)
             setEnd(rangeEnd)
         }
