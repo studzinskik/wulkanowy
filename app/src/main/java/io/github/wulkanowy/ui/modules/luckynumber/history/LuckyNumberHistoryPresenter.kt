@@ -14,8 +14,6 @@ import io.github.wulkanowy.utils.isHolidays
 import io.github.wulkanowy.utils.lastSchoolDay
 import io.github.wulkanowy.utils.monday
 import io.github.wulkanowy.utils.previousOrSameSchoolDay
-import io.github.wulkanowy.utils.schoolYearEnd
-import io.github.wulkanowy.utils.schoolYearStart
 import io.github.wulkanowy.utils.sunday
 import io.github.wulkanowy.utils.toFormattedString
 import kotlinx.coroutines.flow.catch
@@ -48,12 +46,9 @@ class LuckyNumberHistoryPresenter @Inject constructor(
         }
         Timber.i("Lucky number history view was initialized")
         errorHandler.showErrorMessage = ::showErrorViewOnError
-        if (preferencesRepository.previewText.isNotBlank()) setLastSemesterDay()
-        else if (currentDate.isAfter(LocalDate.now().schoolYearEnd) ||
-            currentDate.isBefore(LocalDate.now().schoolYearStart)
-        ) reloadView(currentDate)
-        else reloadView(currentDate)
+        reloadView(currentDate)
         loadData()
+        if (preferencesRepository.previewText.isNotBlank()) setLastSemesterDay()
     }
 
     private fun setLastSemesterDay() {

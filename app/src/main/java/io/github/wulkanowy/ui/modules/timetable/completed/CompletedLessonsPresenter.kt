@@ -17,8 +17,6 @@ import io.github.wulkanowy.utils.lastSchoolDay
 import io.github.wulkanowy.utils.nextOrSameSchoolDay
 import io.github.wulkanowy.utils.nextSchoolDay
 import io.github.wulkanowy.utils.previousSchoolDay
-import io.github.wulkanowy.utils.schoolYearEnd
-import io.github.wulkanowy.utils.schoolYearStart
 import io.github.wulkanowy.utils.toFormattedString
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
@@ -56,12 +54,10 @@ class CompletedLessonsPresenter @Inject constructor(
             Timber.i("Completed lessons feature disabled by school")
         }
         val dateToReload = ofEpochDay(date ?: baseDate.toEpochDay())
-        if (preferencesRepository.previewText.isNotBlank()) setLastSemesterDay()
-        else if (dateToReload.isAfter(now().schoolYearEnd) ||
-            dateToReload.isBefore(now().schoolYearStart)
-        ) reloadView(baseDate)
-        else reloadView(ofEpochDay(date ?: baseDate.toEpochDay()))
+        if (dateToReload.lengthOfMonth() > 4) reloadView(baseDate)
+        else reloadView(dateToReload)
         loadData()
+        if (preferencesRepository.previewText.isNotBlank()) setLastSemesterDay()
     }
 
     fun onPreviousDay() {

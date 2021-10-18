@@ -17,8 +17,6 @@ import io.github.wulkanowy.utils.lastSchoolDay
 import io.github.wulkanowy.utils.nextOrSameSchoolDay
 import io.github.wulkanowy.utils.nextSchoolDay
 import io.github.wulkanowy.utils.previousSchoolDay
-import io.github.wulkanowy.utils.schoolYearEnd
-import io.github.wulkanowy.utils.schoolYearStart
 import io.github.wulkanowy.utils.toFormattedString
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
@@ -49,27 +47,20 @@ class AdditionalLessonsPresenter @Inject constructor(
         Timber.i("Additional lessons was initialized")
         errorHandler.showErrorMessage = ::showErrorViewOnError
         val dateToReload = LocalDate.ofEpochDay(date ?: baseDate.toEpochDay())
+        if (dateToReload.lengthOfMonth() > 4) reloadView(baseDate)
+        else reloadView(dateToReload)
+        loadData()
         if (preferencesRepository.previewText.isNotBlank()) setLastSemesterDay()
-        else if (dateToReload.isAfter(LocalDate.now().schoolYearEnd) ||
-            dateToReload.isBefore(LocalDate.now().schoolYearStart)
-        ) {
-            currentDate = baseDate
-            reloadView()
-        } else {
-            currentDate = dateToReload
-            reloadView()
-        }
-        loadData(currentDate)
     }
 
     fun onPreviousDay() {
-        loadData(currentDate.previousSchoolDay)
-        reloadView()
+        reloadView(currentDate.previousSchoolDay)
+        loadData()
     }
 
     fun onNextDay() {
-        loadData(currentDate.nextSchoolDay)
-        reloadView()
+        reloadView(currentDate.nextSchoolDay)
+        loadData()
     }
 
     fun onPickDate() {
@@ -77,13 +68,13 @@ class AdditionalLessonsPresenter @Inject constructor(
     }
 
     fun onDateSet(year: Int, month: Int, day: Int) {
-        loadData(LocalDate.of(year, month, day))
-        reloadView()
+        reloadView(LocalDate.of(year, month, day))
+        loadData()
     }
 
     fun onSwipeRefresh() {
         Timber.i("Force refreshing the additional lessons")
-        loadData(currentDate, true)
+        loadData(true)
     }
 
     fun onRetry() {
@@ -91,7 +82,7 @@ class AdditionalLessonsPresenter @Inject constructor(
             showErrorView(false)
             showProgress(true)
         }
-        loadData(currentDate, true)
+        loadData(true)
     }
 
     fun onDetailsClick() {
@@ -106,17 +97,23 @@ class AdditionalLessonsPresenter @Inject constructor(
             Timber.i("Loading semester result: An exception occurred")
         }.onEach {
             baseDate = it.end.lastSchoolDay
-            reloadView()
+            reloadView(baseDate)
         }.launch("semester")
     }
 
-    private fun loadData(date: LocalDate, forceRefresh: Boolean = false) {
-        currentDate = date
+    private fun loadData(forceRefresh: Boolean = false) {
 
         flowWithResourceIn {
             val student = studentRepository.getCurrentStudent()
             val semester = semesterRepository.getCurrentSemester(student)
-            timetableRepository.getTimetable(student, semester, date, date, forceRefresh, true)
+            timetableRepository.getTimetable(
+                student,
+                semester,
+                currentDate,
+                currentDate,
+                forceRefresh,
+                true
+            )
         }.onEach {
             when (it.status) {
                 Status.LOADING -> Timber.i("Loading additional lessons data started")
@@ -159,8 +156,10 @@ class AdditionalLessonsPresenter @Inject constructor(
         }
     }
 
-    private fun reloadView() {
-        Timber.i("Reload additional lessons view with the date ${currentDate.toFormattedString()}")
+    private fun reloadView(date: LocalDate) {
+        currentDate = date
+
+        Timber.i("Reload completed lessons view with the date ${currentDate.toFormattedString()}")
         view?.apply {
             showProgress(true)
             enableSwipe(false)

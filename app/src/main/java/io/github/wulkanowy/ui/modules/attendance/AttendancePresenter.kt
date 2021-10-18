@@ -20,8 +20,6 @@ import io.github.wulkanowy.utils.lastSchoolDay
 import io.github.wulkanowy.utils.nextSchoolDay
 import io.github.wulkanowy.utils.previousOrSameSchoolDay
 import io.github.wulkanowy.utils.previousSchoolDay
-import io.github.wulkanowy.utils.schoolYearEnd
-import io.github.wulkanowy.utils.schoolYearStart
 import io.github.wulkanowy.utils.toFormattedString
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
@@ -58,12 +56,10 @@ class AttendancePresenter @Inject constructor(
         Timber.i("Attendance view was initialized")
         errorHandler.showErrorMessage = ::showErrorViewOnError
         val dateToReload = ofEpochDay(date ?: baseDate.toEpochDay())
-        if (prefRepository.previewText.isNotBlank()) setLastSemesterDay()
-        else if (dateToReload.isAfter(now().schoolYearEnd) || dateToReload.isBefore(now().schoolYearStart)) reloadView(
-            baseDate
-        )
-        else reloadView(ofEpochDay(date ?: baseDate.toEpochDay()))
+        if (dateToReload.lengthOfMonth() > 4) reloadView(baseDate)
+        else reloadView(dateToReload)
         loadData()
+        if (prefRepository.previewText.isNotBlank()) setLastSemesterDay()
     }
 
     fun onPreviousDay() {

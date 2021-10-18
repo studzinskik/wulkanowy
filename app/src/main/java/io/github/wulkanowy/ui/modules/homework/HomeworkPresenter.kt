@@ -15,8 +15,6 @@ import io.github.wulkanowy.utils.isHolidays
 import io.github.wulkanowy.utils.lastSchoolDay
 import io.github.wulkanowy.utils.monday
 import io.github.wulkanowy.utils.nextOrSameSchoolDay
-import io.github.wulkanowy.utils.schoolYearEnd
-import io.github.wulkanowy.utils.schoolYearStart
 import io.github.wulkanowy.utils.sunday
 import io.github.wulkanowy.utils.toFormattedString
 import kotlinx.coroutines.flow.catch
@@ -49,12 +47,10 @@ class HomeworkPresenter @Inject constructor(
         Timber.i("Homework view was initialized")
         errorHandler.showErrorMessage = ::showErrorViewOnError
         val dateToReload = ofEpochDay(date ?: baseDate.toEpochDay())
-        if (preferencesRepository.previewText.isNotBlank()) setLastSemesterDay()
-        else if (dateToReload.isAfter(LocalDate.now().schoolYearEnd) ||
-            dateToReload.isBefore(LocalDate.now().schoolYearStart)
-        ) reloadView(baseDate)
-        else reloadView(ofEpochDay(date ?: baseDate.toEpochDay()))
+        if (dateToReload.lengthOfMonth() > 4) reloadView(baseDate)
+        else reloadView(dateToReload)
         loadData()
+        if (preferencesRepository.previewText.isNotBlank()) setLastSemesterDay()
     }
 
     fun onPreviousDay() {
