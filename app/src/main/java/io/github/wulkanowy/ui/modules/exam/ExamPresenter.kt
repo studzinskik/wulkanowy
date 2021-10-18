@@ -13,6 +13,7 @@ import io.github.wulkanowy.utils.afterLoading
 import io.github.wulkanowy.utils.flowWithResourceIn
 import io.github.wulkanowy.utils.getLastSchoolDayIfHoliday
 import io.github.wulkanowy.utils.isHolidays
+import io.github.wulkanowy.utils.lastSchoolDay
 import io.github.wulkanowy.utils.monday
 import io.github.wulkanowy.utils.nextOrSameSchoolDay
 import io.github.wulkanowy.utils.sunday
@@ -92,7 +93,7 @@ class ExamPresenter @Inject constructor(
         }.catch {
             Timber.i("Loading semester result: An exception occurred")
         }.onEach {
-            currentDate = it.end
+            currentDate = it.end.lastSchoolDay
             reloadNavigation()
         }.launch("semester")
     }

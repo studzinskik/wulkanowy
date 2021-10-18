@@ -199,6 +199,7 @@ class TimetableFragment : BaseFragment<FragmentTimetableBinding>(R.layout.fragme
 
         val constraintsBuilder = CalendarConstraints.Builder().apply {
             setValidator(SchoolDaysValidator(rangeStart, rangeEnd))
+            setOpenAt(currentDate.toTimestamp())
             setStart(rangeStart)
             setEnd(rangeEnd)
         }
