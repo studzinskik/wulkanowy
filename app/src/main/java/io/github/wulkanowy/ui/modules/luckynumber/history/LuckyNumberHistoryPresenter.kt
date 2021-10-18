@@ -10,11 +10,12 @@ import io.github.wulkanowy.ui.base.ErrorHandler
 import io.github.wulkanowy.utils.AnalyticsHelper
 import io.github.wulkanowy.utils.afterLoading
 import io.github.wulkanowy.utils.flowWithResource
-import io.github.wulkanowy.utils.getLastSchoolDayIfHoliday
 import io.github.wulkanowy.utils.isHolidays
 import io.github.wulkanowy.utils.lastSchoolDay
 import io.github.wulkanowy.utils.monday
 import io.github.wulkanowy.utils.previousOrSameSchoolDay
+import io.github.wulkanowy.utils.schoolYearEnd
+import io.github.wulkanowy.utils.schoolYearStart
 import io.github.wulkanowy.utils.sunday
 import io.github.wulkanowy.utils.toFormattedString
 import kotlinx.coroutines.flow.catch
@@ -47,9 +48,12 @@ class LuckyNumberHistoryPresenter @Inject constructor(
         }
         Timber.i("Lucky number history view was initialized")
         errorHandler.showErrorMessage = ::showErrorViewOnError
-        loadData()
         if (preferencesRepository.previewText.isNotBlank()) setLastSemesterDay()
-        else if (currentDate.isHolidays) setBaseDateOnHolidays()
+        else if (currentDate.isAfter(LocalDate.now().schoolYearEnd) ||
+            currentDate.isBefore(LocalDate.now().schoolYearStart)
+        ) reloadView(currentDate)
+        else reloadView(currentDate)
+        loadData()
     }
 
     private fun setLastSemesterDay() {
@@ -64,22 +68,14 @@ class LuckyNumberHistoryPresenter @Inject constructor(
         }.launch("semester")
     }
 
-    private fun setBaseDateOnHolidays() {
-        flow {
-            val student = studentRepository.getCurrentStudent()
-            emit(semesterRepository.getCurrentSemester(student))
-        }.catch {
-            Timber.i("Loading semester result: An exception occurred")
-        }.onEach {
-            currentDate = currentDate.getLastSchoolDayIfHoliday(it.schoolYear)
-            reloadNavigation()
-        }.launch("holidays")
-    }
-
     private fun loadData() {
         flowWithResource {
             val student = studentRepository.getCurrentStudent()
-            luckyNumberRepository.getLuckyNumberHistory(student, currentDate.monday, currentDate.sunday)
+            luckyNumberRepository.getLuckyNumberHistory(
+                student,
+                currentDate.monday,
+                currentDate.sunday
+            )
         }.onEach {
             when (it.status) {
                 Status.LOADING -> Timber.i("Loading lucky number history started")
@@ -159,8 +155,10 @@ class LuckyNumberHistoryPresenter @Inject constructor(
         view?.apply {
             showPreButton(!currentDate.minusDays(7).isHolidays)
             showNextButton(!currentDate.plusDays(7).isHolidays)
-            updateNavigationWeek("${currentDate.monday.toFormattedString("dd.MM")} - " +
-                currentDate.sunday.toFormattedString("dd.MM"))
+            updateNavigationWeek(
+                "${currentDate.monday.toFormattedString("dd.MM")} - " +
+                    currentDate.sunday.toFormattedString("dd.MM")
+            )
         }
     }
 

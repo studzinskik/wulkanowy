@@ -14,13 +14,14 @@ import io.github.wulkanowy.utils.afterLoading
 import io.github.wulkanowy.utils.capitalise
 import io.github.wulkanowy.utils.flowWithResource
 import io.github.wulkanowy.utils.flowWithResourceIn
-import io.github.wulkanowy.utils.getLastSchoolDayIfHoliday
 import io.github.wulkanowy.utils.isExcusableOrNotExcused
 import io.github.wulkanowy.utils.isHolidays
 import io.github.wulkanowy.utils.lastSchoolDay
 import io.github.wulkanowy.utils.nextSchoolDay
 import io.github.wulkanowy.utils.previousOrSameSchoolDay
 import io.github.wulkanowy.utils.previousSchoolDay
+import io.github.wulkanowy.utils.schoolYearEnd
+import io.github.wulkanowy.utils.schoolYearStart
 import io.github.wulkanowy.utils.toFormattedString
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
@@ -56,10 +57,13 @@ class AttendancePresenter @Inject constructor(
         view.initView()
         Timber.i("Attendance view was initialized")
         errorHandler.showErrorMessage = ::showErrorViewOnError
-        reloadView(ofEpochDay(date ?: baseDate.toEpochDay()))
-        loadData()
+        val dateToReload = ofEpochDay(date ?: baseDate.toEpochDay())
         if (prefRepository.previewText.isNotBlank()) setLastSemesterDay()
-        else if (currentDate.isHolidays) setBaseDateOnHolidays()
+        else if (dateToReload.isAfter(now().schoolYearEnd) || dateToReload.isBefore(now().schoolYearStart)) reloadView(
+            baseDate
+        )
+        else reloadView(ofEpochDay(date ?: baseDate.toEpochDay()))
+        loadData()
     }
 
     fun onPreviousDay() {
@@ -203,19 +207,6 @@ class AttendancePresenter @Inject constructor(
             baseDate = it.end.lastSchoolDay
             reloadView(baseDate)
         }.launch("semester")
-    }
-
-    private fun setBaseDateOnHolidays() {
-        flow {
-            val student = studentRepository.getCurrentStudent()
-            emit(semesterRepository.getCurrentSemester(student))
-        }.catch {
-            Timber.i("Loading semester result: An exception occurred")
-        }.onEach {
-            baseDate = baseDate.getLastSchoolDayIfHoliday(it.schoolYear)
-            currentDate = baseDate
-            reloadNavigation()
-        }.launch("holidays")
     }
 
     private fun loadData(forceRefresh: Boolean = false) {

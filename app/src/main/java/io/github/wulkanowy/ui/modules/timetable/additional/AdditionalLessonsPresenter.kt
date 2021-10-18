@@ -12,12 +12,13 @@ import io.github.wulkanowy.utils.AnalyticsHelper
 import io.github.wulkanowy.utils.afterLoading
 import io.github.wulkanowy.utils.capitalise
 import io.github.wulkanowy.utils.flowWithResourceIn
-import io.github.wulkanowy.utils.getLastSchoolDayIfHoliday
 import io.github.wulkanowy.utils.isHolidays
 import io.github.wulkanowy.utils.lastSchoolDay
 import io.github.wulkanowy.utils.nextOrSameSchoolDay
 import io.github.wulkanowy.utils.nextSchoolDay
 import io.github.wulkanowy.utils.previousSchoolDay
+import io.github.wulkanowy.utils.schoolYearEnd
+import io.github.wulkanowy.utils.schoolYearStart
 import io.github.wulkanowy.utils.toFormattedString
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
@@ -47,10 +48,18 @@ class AdditionalLessonsPresenter @Inject constructor(
         view.initView()
         Timber.i("Additional lessons was initialized")
         errorHandler.showErrorMessage = ::showErrorViewOnError
-        loadData(LocalDate.ofEpochDay(date ?: baseDate.toEpochDay()))
+        val dateToReload = LocalDate.ofEpochDay(date ?: baseDate.toEpochDay())
         if (preferencesRepository.previewText.isNotBlank()) setLastSemesterDay()
-        else if (currentDate.isHolidays) setBaseDateOnHolidays()
-        reloadView()
+        else if (dateToReload.isAfter(LocalDate.now().schoolYearEnd) ||
+            dateToReload.isBefore(LocalDate.now().schoolYearStart)
+        ) {
+            currentDate = baseDate
+            reloadView()
+        } else {
+            currentDate = dateToReload
+            reloadView()
+        }
+        loadData(currentDate)
     }
 
     fun onPreviousDay() {
@@ -99,19 +108,6 @@ class AdditionalLessonsPresenter @Inject constructor(
             baseDate = it.end.lastSchoolDay
             reloadView()
         }.launch("semester")
-    }
-
-    private fun setBaseDateOnHolidays() {
-        flow {
-            val student = studentRepository.getCurrentStudent()
-            emit(semesterRepository.getCurrentSemester(student))
-        }.catch {
-            Timber.i("Loading semester result: An exception occurred")
-        }.onEach {
-            baseDate = baseDate.getLastSchoolDayIfHoliday(it.schoolYear)
-            currentDate = baseDate
-            reloadNavigation()
-        }.launch("holidays")
     }
 
     private fun loadData(date: LocalDate, forceRefresh: Boolean = false) {
