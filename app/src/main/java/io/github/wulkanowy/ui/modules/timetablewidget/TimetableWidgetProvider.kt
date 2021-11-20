@@ -256,7 +256,7 @@ class TimetableWidgetProvider : HiltBroadcastReceiver() {
 
     private fun Context.createAvatarBitmap(student: Student): Bitmap {
         val avatarColor = if (student.avatarColor == -2937041L) {
-            getCompatColor(R.color.colorPrimaryLight).toLong()
+            getCompatColor(R.color.colorPrimaryDark).toLong()
         } else {
             student.avatarColor
         }

@@ -5,9 +5,18 @@
     <style name="BaseWulkanowyTheme" parent="@style/Theme.Material3.Light">
         <item name="android:forceDarkAllowed" tools:targetApi="Q">false</item>
         <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="colorPrimaryContainer">@color/colorPrimaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/colorOnPrimaryContainer</item>
         <item name="colorSecondary">@color/colorPrimary</item>
         <item name="colorOnSecondary">@android:color/white</item>
-        <item name="colorSecondaryContainer">@color/colorSecondaryContainer</item>
+        <item name="colorSecondaryContainer">@color/colorPrimaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/colorOnPrimaryContainer</item>
+        <item name="colorTertiary">@color/colorPrimary</item>
+        <item name="colorOnTertiary">@android:color/white</item>
+        <item name="colorTertiaryContainer">@color/colorPrimaryContainer</item>
+        <item name="colorOnTertiaryContainer">@color/colorOnPrimaryContainer</item>
+        <item name="colorSurface">@color/colorSurface</item>
         <item name="colorTimetableChange">@color/timetable_change_dark</item>
         <item name="colorError">@color/colorError</item>
         <item name="colorDivider">@color/colorDivider</item>
@@ -16,6 +25,7 @@
         <item name="android:statusBarColor">@android:color/darker_gray</item>
         <item name="android:textColor">?android:textColorPrimary</item>
         <item name="android:preferenceStyle">@style/PreferenceThemeOverlay</item>
+        <item name="materialCardViewStyle">@style/Widget.Wulkanowy.CardView</item>
     </style>
 
     <style name="WulkanowyTheme.NoActionBar" parent="WulkanowyTheme">
@@ -25,7 +35,7 @@
     </style>
 
     <style name="WulkanowyTheme.SplashScreen" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/colorPrimaryDark</item>
+        <item name="windowSplashScreenBackground">@color/colorPrimaryDarker</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
         <item name="postSplashScreenTheme">@style/WulkanowyTheme.NoActionBar</item>
         <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
@@ -37,6 +47,10 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:textColor">?android:textColorPrimary</item>
+    </style>
+
+    <style name="Widget.Wulkanowy.CardView" parent="Widget.Material3.CardView.Filled">
+        <item name="cardBackgroundColor">@color/colorCards</item>
     </style>
 
     <style name="Widget.Wulkanowy.Chip.Choice" parent="Widget.MaterialComponents.Chip.Choice">

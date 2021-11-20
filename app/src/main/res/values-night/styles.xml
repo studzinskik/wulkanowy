@@ -2,8 +2,19 @@
 
     <style name="WulkanowyTheme" parent="@style/Theme.Material3.Dark">
         <item name="android:forceDarkAllowed" tools:targetApi="Q">false</item>
-        <item name="colorPrimary">@color/colorPrimaryLight</item>
-        <item name="colorSecondary">@color/colorPrimaryLight</item>
+        <item name="colorPrimary">@color/colorPrimaryDark</item>
+        <item name="colorOnPrimary">@color/colorOnPrimaryDark</item>
+        <item name="colorPrimaryContainer">@color/colorPrimaryContainerDark</item>
+        <item name="colorOnPrimaryContainer">@color/colorOnPrimaryContainerDark</item>
+        <item name="colorSecondary">@color/colorPrimaryDark</item>
+        <item name="colorOnSecondary">@color/colorOnPrimaryDark</item>
+        <item name="colorSecondaryContainer">@color/colorPrimaryContainerDark</item>
+        <item name="colorOnSecondaryContainer">@color/colorOnPrimaryContainerDark</item>
+        <item name="colorTertiary">@color/colorPrimaryDark</item>
+        <item name="colorOnTertiary">@color/colorOnPrimaryDark</item>
+        <item name="colorTertiaryContainer">@color/colorPrimaryContainerDark</item>
+        <item name="colorOnTertiaryContainer">@color/colorOnPrimaryContainerDark</item>
+        <item name="colorSurface">@color/colorSurfaceDark</item>
         <item name="colorTimetableChange">@color/timetable_change_light</item>
         <item name="colorError">@color/colorErrorLight</item>
         <item name="colorDivider">@color/colorDividerInverse</item>
@@ -11,8 +22,8 @@
         <item name="colorMessageMedium">@color/dashboard_message_medium_light</item>
         <item name="android:windowBackground">?colorSurface</item>
         <item name="android:textColor">?android:textColorPrimary</item>
-        <item name="android:navigationBarColor">@color/colorNavigationBarLight</item>
-        <item name="android:statusBarColor">@color/colorStatusBarLight</item>
+        <item name="android:navigationBarColor">@color/colorNavigationBarDark</item>
+        <item name="android:statusBarColor">@color/colorStatusBarDark</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
         <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
     </style>
@@ -45,10 +56,14 @@
     </style>
 
     <style name="WulkanowyTheme.WidgetAccountSwitcher" parent="Theme.Material3.Dark.Dialog">
-        <item name="colorPrimary">@color/colorPrimaryLight</item>
-        <item name="colorSecondary">@color/colorPrimaryLight</item>
+        <item name="colorPrimary">@color/colorPrimaryDark</item>
+        <item name="colorSecondary">@color/colorPrimaryDark</item>
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:textColor">?android:textColorPrimary</item>
+    </style>
+
+    <style name="Widget.Wulkanowy.CardView" parent="Widget.Material3.CardView.Filled">
+        <item name="cardBackgroundColor">@color/colorCardsDark</item>
     </style>
 </resources>

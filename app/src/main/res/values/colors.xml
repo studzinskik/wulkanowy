@@ -1,16 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#d32f2f</color>
-    <color name="colorSecondaryContainer">#fcdad5</color>
-    <color name="colorPrimaryLight">#e57373</color>
-    <color name="colorPrimaryDark">#9a0007</color>
+    <color name="colorPrimary">#b2111b</color>
+    <color name="colorPrimaryDark">#f9b2aa</color>
+    <color name="colorOnPrimaryDark">#630003</color>
+    <color name="colorPrimaryContainer">#fcdad5</color>
+    <color name="colorPrimaryContainerDark">#8c0007</color>
+    <color name="colorOnPrimaryContainer">#3e0001</color>
+    <color name="colorOnPrimaryContainerDark">#fcdad5</color>
+    <color name="colorSurface">#fcfcfc</color>
+    <color name="colorSurfaceDark">#201a19</color>
+    <color name="colorCards">#f5e5e6</color>
+    <color name="colorCardsDark">#312624</color>
+    <color name="colorPrimaryDarker">#9a0007</color>
     <color name="colorError">#ff5722</color>
     <color name="colorErrorLight">#e84853</color>
 
-    <color name="colorNavigationBarLight">#2D2D2D</color>
+    <color name="colorNavigationBarLight">#f5e8e9</color>
+    <color name="colorNavigationBarDark">#312624</color>
     <color name="colorNavigationBarBlack">#1E1E1E</color>
 
-    <color name="colorStatusBarLight">#1C1C1C</color>
+    <color name="colorStatusBarLight">#f5e5e6</color>
+    <color name="colorStatusBarDark">#342826</color>
     <color name="colorStatusBarBlack">#0D0D0D</color>
 
     <color name="dashboard_message_medium_light">#FFD980</color>

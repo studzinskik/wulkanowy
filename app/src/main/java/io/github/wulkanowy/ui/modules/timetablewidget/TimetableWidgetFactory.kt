@@ -80,7 +80,7 @@ class TimetableWidgetFactory(
             textColor = android.R.color.black
             timetableChangeColor = R.color.timetable_change_dark
         } else {
-            primaryColor = R.color.colorPrimaryLight
+            primaryColor = R.color.colorPrimaryDark
             textColor = android.R.color.white
             timetableChangeColor = R.color.timetable_change_light
         }
