@@ -2,7 +2,7 @@
 
     <style name="WulkanowyTheme" parent="BaseWulkanowyTheme" />
 
-    <style name="BaseWulkanowyTheme" parent="@style/Theme.MaterialComponents.Light">
+    <style name="BaseWulkanowyTheme" parent="@style/Theme.Material3.Light">
         <item name="android:forceDarkAllowed" tools:targetApi="Q">false</item>
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorSecondary">@color/colorPrimary</item>
@@ -30,7 +30,7 @@
         <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
     </style>
 
-    <style name="WulkanowyTheme.WidgetAccountSwitcher" parent="Theme.MaterialComponents.Light.Dialog">
+    <style name="WulkanowyTheme.WidgetAccountSwitcher" parent="Theme.Material3.Light.Dialog">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorSecondary">@color/colorPrimary</item>
         <item name="windowActionBar">false</item>
