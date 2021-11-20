@@ -169,8 +169,12 @@ class MainActivity : BaseActivity<MainPresenter, ActivityMainBinding>(), MainVie
                     .setIcon(R.drawable.ic_main_more)
             }
             selectedItemId = startMenuIndex
-            setOnItemSelectedListener { presenter.onTabSelected(it.itemId, false) }
-            setOnItemReselectedListener { presenter.onTabSelected(it.itemId, true) }
+            setOnItemSelectedListener {
+                this@MainActivity.presenter.onTabSelected(it.itemId, false)
+            }
+            setOnItemReselectedListener {
+                this@MainActivity.presenter.onTabSelected(it.itemId, true)
+            }
         }
     }
 
