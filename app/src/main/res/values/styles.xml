@@ -7,6 +7,7 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorSecondary">@color/colorPrimary</item>
         <item name="colorOnSecondary">@android:color/white</item>
+        <item name="colorSecondaryContainer">@color/colorSecondaryContainer</item>
         <item name="colorTimetableChange">@color/timetable_change_dark</item>
         <item name="colorError">@color/colorError</item>
         <item name="colorDivider">@color/colorDivider</item>
