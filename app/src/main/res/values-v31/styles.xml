@@ -2,7 +2,7 @@
 
     <style name="WulkanowyTheme" parent="BaseWulkanowyTheme" />
 
-    <style name="BaseWulkanowyTheme" parent="@style/Theme.Material3.Light">
+    <style name="BaseWulkanowyTheme" parent="@style/Theme.Material3.DynamicColors.Light">
         <item name="android:forceDarkAllowed" tools:targetApi="Q">false</item>
         <item name="colorPrimary">@color/material_dynamic_primary40</item>
         <item name="colorOnPrimary">@color/material_dynamic_primary100</item>
@@ -26,57 +26,20 @@
         <item name="colorSurfaceInverse">@color/material_dynamic_neutral20</item>
         <item name="colorOnSurfaceInverse">@color/material_dynamic_neutral95</item>
         <item name="colorPrimaryInverse">@color/material_dynamic_primary80</item>
-
         <item name="colorTimetableChange">@color/timetable_change_dark</item>
         <item name="colorError">@color/colorError</item>
         <item name="colorDivider">@color/colorDivider</item>
         <item name="colorSwipeRefresh">@color/material_dynamic_secondary90</item>
         <item name="colorMessageMedium">@color/dashboard_message_medium_dark</item>
-        <item name="android:statusBarColor">#000000</item>
-        <item name="android:navigationBarColor">#000000</item>
         <item name="android:textColor">@color/material_dynamic_neutral10</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
         <item name="android:preferenceStyle">@style/PreferenceThemeOverlay</item>
         <item name="materialCardViewStyle">@style/Widget.Wulkanowy.CardView</item>
-    </style>
-
-    <style name="WulkanowyTheme.NoActionBar" parent="WulkanowyTheme">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
-        <item name="windowActionModeOverlay">true</item>
-    </style>
-
-    <style name="WulkanowyTheme.SplashScreen" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/colorPrimaryDarker</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
-        <item name="postSplashScreenTheme">@style/WulkanowyTheme.NoActionBar</item>
-        <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
-    </style>
-
-    <style name="WulkanowyTheme.WidgetAccountSwitcher" parent="Theme.Material3.Light.Dialog">
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorSecondary">@color/colorPrimary</item>
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
-        <item name="android:textColor">?android:textColorPrimary</item>
     </style>
 
     <style name="Widget.Wulkanowy.CardView" parent="Widget.Material3.CardView.Filled">
         <item name="cardBackgroundColor">@color/colorCards</item>
     </style>
-
-    <style name="Widget.Wulkanowy.Chip.Choice" parent="Widget.MaterialComponents.Chip.Choice">
-        <item name="materialThemeOverlay">@style/ThemeOverlay.Wulkanowy.Chip.Choice</item>
-    </style>
-
-    <style name="ThemeOverlay.Wulkanowy.Chip.Choice" parent="">
-        <item name="elevationOverlayEnabled">false</item>
-    </style>
-
-    <style name="WulkanowyTheme.TextAppearanceBottomNavigation">
-        <item name="android:textSize">11sp</item>
-    </style>
-
-    <style name="WulkanowyTheme.Login" parent="WulkanowyTheme.NoActionBar" />
-
-    <style name="WulkanowyTheme.MessageSend" parent="WulkanowyTheme.NoActionBar" />
 </resources>

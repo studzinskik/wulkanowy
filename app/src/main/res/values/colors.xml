@@ -35,11 +35,11 @@
 
     <color name="colorNavigationBarLight">#f5e8e9</color>
     <color name="colorNavigationBarDark">#312624</color>
-    <color name="colorNavigationBarBlack">#1E1E1E</color>
+    <color name="colorNavigationBarBlack">#000000</color>
 
     <color name="colorStatusBarLight">#f5e5e6</color>
     <color name="colorStatusBarDark">#342826</color>
-    <color name="colorStatusBarBlack">#0D0D0D</color>
+    <color name="colorStatusBarBlack">#000000</color>
 
     <color name="dashboard_message_medium_light">#FFD980</color>
     <color name="dashboard_message_medium_dark">#ffd54f</color>
