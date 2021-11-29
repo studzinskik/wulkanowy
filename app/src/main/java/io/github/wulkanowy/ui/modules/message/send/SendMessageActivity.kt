@@ -14,6 +14,7 @@ import android.view.View.VISIBLE
 import android.widget.Toast
 import android.widget.Toast.LENGTH_LONG
 import androidx.core.widget.doOnTextChanged
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import io.github.wulkanowy.R
 import io.github.wulkanowy.data.db.entities.Message
@@ -218,7 +219,7 @@ class SendMessageActivity : BaseActivity<SendMessagePresenter, ActivitySendMessa
     }
 
     override fun showMessageBackupDialog() {
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle(R.string.message_title)
             .setMessage(presenter.getMessageBackupContent(presenter.getRecipientsNames()))
             .setPositiveButton(R.string.all_yes) { _, _ -> presenter.restoreMessageParts() }

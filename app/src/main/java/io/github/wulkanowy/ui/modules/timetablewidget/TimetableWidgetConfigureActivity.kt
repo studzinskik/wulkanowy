@@ -10,6 +10,7 @@ import android.widget.Toast
 import android.widget.Toast.LENGTH_LONG
 import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import io.github.wulkanowy.R
 import io.github.wulkanowy.data.db.entities.StudentWithSemesters
@@ -70,7 +71,7 @@ class TimetableWidgetConfigureActivity :
 
         if (appInfo.systemVersion >= Build.VERSION_CODES.Q) items += getString(R.string.widget_timetable_theme_system)
 
-        dialog = AlertDialog.Builder(this, R.style.WulkanowyTheme_WidgetAccountSwitcher)
+        dialog = MaterialAlertDialogBuilder(this, R.style.WulkanowyTheme_WidgetAccountSwitcher)
             .setTitle(R.string.widget_timetable_theme_title)
             .setOnDismissListener { presenter.onDismissThemeView() }
             .setSingleChoiceItems(items, -1) { _, which ->
