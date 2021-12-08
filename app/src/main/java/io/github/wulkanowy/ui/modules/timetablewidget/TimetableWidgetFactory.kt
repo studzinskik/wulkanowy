@@ -42,7 +42,7 @@ class TimetableWidgetFactory(
 
     private var savedCurrentTheme: Long? = null
 
-    private var primaryColor: Int? = null
+    private var timetableCanceledColor: Int? = null
 
     private var textColor: Int? = null
 
@@ -76,13 +76,13 @@ class TimetableWidgetFactory(
         savedCurrentTheme = sharedPref.getLong(getCurrentThemeWidgetKey(appWidgetId), 0)
 
         if (savedCurrentTheme == 0L) {
-            primaryColor = R.color.colorPrimary
+            timetableCanceledColor = R.color.timetable_canceled_light
             textColor = android.R.color.black
-            timetableChangeColor = R.color.timetable_change_dark
-        } else {
-            primaryColor = R.color.colorPrimaryDark
-            textColor = android.R.color.white
             timetableChangeColor = R.color.timetable_change_light
+        } else {
+            timetableCanceledColor = R.color.timetable_canceled_dark
+            textColor = android.R.color.white
+            timetableChangeColor = R.color.timetable_change_dark
         }
     }
 
@@ -158,9 +158,9 @@ class TimetableWidgetFactory(
         with(remoteViews) {
             setInt(R.id.timetableWidgetItemSubject, "setPaintFlags",
                 STRIKE_THRU_TEXT_FLAG or ANTI_ALIAS_FLAG)
-            setTextColor(R.id.timetableWidgetItemNumber, context.getCompatColor(primaryColor!!))
-            setTextColor(R.id.timetableWidgetItemSubject, context.getCompatColor(primaryColor!!))
-            setTextColor(R.id.timetableWidgetItemDescription, context.getCompatColor(primaryColor!!))
+            setTextColor(R.id.timetableWidgetItemNumber, context.getCompatColor(timetableCanceledColor!!))
+            setTextColor(R.id.timetableWidgetItemSubject, context.getCompatColor(timetableCanceledColor!!))
+            setTextColor(R.id.timetableWidgetItemDescription, context.getCompatColor(timetableCanceledColor!!))
         }
     }
 

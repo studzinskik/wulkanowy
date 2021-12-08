@@ -17,7 +17,7 @@
         <item name="colorTertiaryContainer">@color/colorPrimaryContainer</item>
         <item name="colorOnTertiaryContainer">@color/colorOnPrimaryContainer</item>
         <item name="colorSurface">@color/colorSurface</item>
-        <item name="colorTimetableChange">@color/timetable_change_dark</item>
+        <item name="colorTimetableChange">@color/timetable_change_light</item>
         <item name="colorError">@color/colorError</item>
         <item name="colorDivider">@color/colorDivider</item>
         <item name="colorSwipeRefresh">@color/colorSwipeRefresh</item>

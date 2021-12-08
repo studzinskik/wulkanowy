@@ -103,7 +103,7 @@
             android:layout_toRightOf="@id/timetableWidgetItemRoom"
             android:ellipsize="end"
             android:maxLines="1"
-            android:textColor="@color/timetable_change_dark"
+            android:textColor="@color/timetable_change_light"
             android:textSize="13sp"
             android:visibility="gone"
             tools:text="Agata Kowalska - Błaszczyk"
@@ -121,7 +121,7 @@
             android:layout_marginRight="16dp"
             android:layout_toEndOf="@+id/timetableWidgetItemTimeStart"
             android:layout_toRightOf="@+id/timetableWidgetItemTimeStart"
-            android:textColor="@color/timetable_change_dark"
+            android:textColor="@color/timetable_change_light"
             android:textSize="13sp"
             tools:text="Lekcja odwołana: uczniowie zwolnieni do domu"
             tools:visibility="gone" />
