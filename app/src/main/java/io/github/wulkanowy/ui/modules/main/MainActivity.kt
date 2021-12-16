@@ -9,8 +9,10 @@ import android.view.Menu
 import android.view.MenuItem
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsCompat.Type.navigationBars
-import androidx.core.view.WindowInsetsCompat.Type.systemBars
+import androidx.core.view.WindowInsetsCompat.Type.statusBars
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.fragment.app.DialogFragment
@@ -94,29 +96,26 @@ class MainActivity : BaseActivity<MainPresenter, ActivityMainBinding>(), MainVie
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(ActivityMainBinding.inflate(layoutInflater).apply { binding = this }.root)
         setSupportActionBar(binding.mainToolbar)
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            binding.mainToolbar.setOnApplyWindowInsetsListener { view, insets ->
-                val inset = insets.getInsets(systemBars())
-                view.updatePadding(
-                    bottom = inset.bottom,
-                    left = inset.left,
-                    top = inset.top,
-                    right = inset.right
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+            ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
+                val statusInset = insets.getInsets(statusBars())
+                binding.mainToolbar.updatePadding(
+                    bottom = statusInset.bottom,
+                    left = statusInset.left,
+                    top = statusInset.top,
+                    right = statusInset.right
                 )
-                insets
-            }
-            binding.mainBottomNav.setOnApplyWindowInsetsListener { view, insets ->
-                val inset = insets.getInsets(navigationBars())
-                view.updatePadding(
-                    bottom = inset.bottom,
-                    left = inset.left,
-                    top = inset.top,
-                    right = inset.right
+                val navInset = insets.getInsets(navigationBars())
+                binding.mainBottomNav.updatePadding(
+                    bottom = navInset.bottom,
+                    left = navInset.left,
+                    right = navInset.right
                 )
-                insets
+                WindowInsetsCompat.CONSUMED
             }
         }
         this.savedInstanceState = savedInstanceState
