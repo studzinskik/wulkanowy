@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.DialogFragment
+import io.github.wulkanowy.R
 import io.github.wulkanowy.data.db.entities.Exam
 import io.github.wulkanowy.databinding.DialogExamBinding
 import io.github.wulkanowy.utils.lifecycleAwareVariable
@@ -27,7 +28,7 @@ class ExamDialog : DialogFragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setStyle(STYLE_NO_TITLE, 0)
+        setStyle(STYLE_NO_TITLE, R.style.Wulkanowy_Dialog_Theme)
         arguments?.run {
             exam = getSerializable(ARGUMENT_KEY) as Exam
         }

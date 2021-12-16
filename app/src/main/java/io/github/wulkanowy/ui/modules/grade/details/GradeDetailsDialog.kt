@@ -41,7 +41,7 @@ class GradeDetailsDialog : DialogFragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setStyle(STYLE_NO_TITLE, 0)
+        setStyle(STYLE_NO_TITLE, R.style.Wulkanowy_Dialog_Theme)
         arguments?.run {
             grade = getSerializable(ARGUMENT_KEY) as Grade
             gradeColorTheme = getSerializable(COLOR_THEME_KEY) as GradeColorTheme

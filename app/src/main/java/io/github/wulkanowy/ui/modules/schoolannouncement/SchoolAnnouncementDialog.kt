@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.text.parseAsHtml
 import androidx.fragment.app.DialogFragment
+import io.github.wulkanowy.R
 import io.github.wulkanowy.data.db.entities.SchoolAnnouncement
 import io.github.wulkanowy.databinding.DialogSchoolAnnouncementBinding
 import io.github.wulkanowy.utils.lifecycleAwareVariable
@@ -28,7 +29,7 @@ class SchoolAnnouncementDialog : DialogFragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setStyle(STYLE_NO_TITLE, 0)
+        setStyle(STYLE_NO_TITLE, R.style.Wulkanowy_Dialog_Theme)
         arguments?.run {
             announcement = getSerializable(ARGUMENT_KEY) as SchoolAnnouncement
         }

@@ -69,4 +69,17 @@
     <style name="WulkanowyTheme.Login" parent="WulkanowyTheme.NoActionBar" />
 
     <style name="WulkanowyTheme.MessageSend" parent="WulkanowyTheme.NoActionBar" />
+
+    <style name="Wulkanowy.Dialog" parent="Widget.Material3.CardView.Filled">
+        <item name="shapeAppearance">@style/ShapeAppearance.Wulkanowy.MediumComponent</item>
+    </style>
+
+    <style name="ShapeAppearance.Wulkanowy.MediumComponent" parent="ShapeAppearance.Material3.MediumComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">28dp</item>
+    </style>
+
+    <style name="Wulkanowy.Dialog.Theme" parent="Theme.Material3.DayNight.Dialog">
+        <item name="android:windowBackground">@android:color/transparent</item>
+    </style>
 </resources>
