@@ -54,14 +54,6 @@
         <item name="cardBackgroundColor">@color/colorCards</item>
     </style>
 
-    <style name="Widget.Wulkanowy.Chip.Choice" parent="Widget.MaterialComponents.Chip.Choice">
-        <item name="materialThemeOverlay">@style/ThemeOverlay.Wulkanowy.Chip.Choice</item>
-    </style>
-
-    <style name="ThemeOverlay.Wulkanowy.Chip.Choice" parent="">
-        <item name="elevationOverlayEnabled">false</item>
-    </style>
-
     <style name="WulkanowyTheme.TextAppearanceBottomNavigation">
         <item name="android:textSize">11sp</item>
     </style>
