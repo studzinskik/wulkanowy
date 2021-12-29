@@ -10,10 +10,10 @@ import android.view.View
 import android.view.View.GONE
 import android.view.View.INVISIBLE
 import android.view.View.VISIBLE
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.view.ActionMode
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import io.github.wulkanowy.R
 import io.github.wulkanowy.data.db.entities.Attendance
@@ -233,7 +233,7 @@ class AttendanceFragment : BaseFragment<FragmentAttendanceBinding>(R.layout.frag
 
     override fun showExcuseDialog() {
         val dialogBinding = DialogExcuseBinding.inflate(LayoutInflater.from(context))
-        AlertDialog.Builder(requireContext())
+        MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.attendance_excuse_title)
             .setView(dialogBinding.root)
             .setNegativeButton(android.R.string.cancel) { _, _ -> }
