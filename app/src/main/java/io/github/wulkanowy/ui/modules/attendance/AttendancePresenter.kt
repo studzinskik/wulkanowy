@@ -9,18 +9,7 @@ import io.github.wulkanowy.data.repositories.SemesterRepository
 import io.github.wulkanowy.data.repositories.StudentRepository
 import io.github.wulkanowy.ui.base.BasePresenter
 import io.github.wulkanowy.ui.base.ErrorHandler
-import io.github.wulkanowy.utils.AnalyticsHelper
-import io.github.wulkanowy.utils.afterLoading
-import io.github.wulkanowy.utils.capitalise
-import io.github.wulkanowy.utils.flowWithResource
-import io.github.wulkanowy.utils.flowWithResourceIn
-import io.github.wulkanowy.utils.isExcusableOrNotExcused
-import io.github.wulkanowy.utils.isHolidays
-import io.github.wulkanowy.utils.lastSchoolDay
-import io.github.wulkanowy.utils.nextSchoolDay
-import io.github.wulkanowy.utils.previousOrSameSchoolDay
-import io.github.wulkanowy.utils.previousSchoolDay
-import io.github.wulkanowy.utils.toFormattedString
+import io.github.wulkanowy.utils.*
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onEach
@@ -176,6 +165,8 @@ class AttendancePresenter @Inject constructor(
         view?.apply {
             showExcuseCheckboxes(true)
             showExcuseButton(false)
+            enableSwipe(false)
+            showDayNavigation(false)
         }
         attendanceToExcuseList.clear()
         return true
@@ -185,6 +176,8 @@ class AttendancePresenter @Inject constructor(
         view?.apply {
             showExcuseCheckboxes(false)
             showExcuseButton(true)
+            enableSwipe(true)
+            showDayNavigation(true)
         }
     }
 
@@ -200,7 +193,7 @@ class AttendancePresenter @Inject constructor(
         }.catch {
             Timber.i("Loading semester result: An exception occurred")
         }.onEach {
-            baseDate = it.end.lastSchoolDay
+            baseDate = it.end.lastSchoolDayInSchoolYear
             reloadView(baseDate)
         }.launch("semester")
     }
@@ -260,9 +253,8 @@ class AttendancePresenter @Inject constructor(
                         showEmpty(filteredAttendance.isEmpty())
                         showErrorView(false)
                         showContent(filteredAttendance.isNotEmpty())
-                        showExcuseButton(filteredAttendance.any { item ->
-                            (!isParent && isVulcanExcusedFunctionEnabled) || (isParent && item.isExcusableOrNotExcused)
-                        })
+                        val anyExcusables = filteredAttendance.any { it.isExcusableOrNotExcused }
+                        showExcuseButton(anyExcusables && (isParent || isVulcanExcusedFunctionEnabled))
                     }
                     analytics.logEvent(
                         "load_data",
