@@ -1,6 +1,7 @@
 package io.github.wulkanowy.services.alarm
 
 import android.app.PendingIntent
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -12,14 +13,12 @@ import io.github.wulkanowy.R
 import io.github.wulkanowy.data.Status
 import io.github.wulkanowy.data.repositories.PreferencesRepository
 import io.github.wulkanowy.data.repositories.StudentRepository
-import io.github.wulkanowy.services.HiltBroadcastReceiver
 import io.github.wulkanowy.services.sync.channels.UpcomingLessonsChannel.Companion.CHANNEL_ID
 import io.github.wulkanowy.ui.modules.Destination
 import io.github.wulkanowy.ui.modules.splash.SplashActivity
 import io.github.wulkanowy.utils.PendingIntentCompat
 import io.github.wulkanowy.utils.flowWithResource
 import io.github.wulkanowy.utils.getCompatColor
-import io.github.wulkanowy.utils.toLocalDateTime
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.launchIn
@@ -28,7 +27,7 @@ import timber.log.Timber
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class TimetableNotificationReceiver : HiltBroadcastReceiver() {
+class TimetableNotificationReceiver : BroadcastReceiver() {
 
     @Inject
     lateinit var studentRepository: StudentRepository
@@ -58,7 +57,6 @@ class TimetableNotificationReceiver : HiltBroadcastReceiver() {
 
     @OptIn(DelicateCoroutinesApi::class)
     override fun onReceive(context: Context, intent: Intent) {
-        super.onReceive(context, intent)
         Timber.d("Receiving intent... ${intent.toUri(0)}")
 
         flowWithResource {
@@ -96,7 +94,7 @@ class TimetableNotificationReceiver : HiltBroadcastReceiver() {
         val nextSubject = intent.getStringExtra(LESSON_NEXT_TITLE)
         val nextRoom = intent.getStringExtra(LESSON_NEXT_ROOM)
 
-        Timber.d("TimetableNotification receive: type: $type, subject: $subject, start: ${start.toLocalDateTime()}, student: $studentId")
+        Timber.d("TimetableNotification receive: type: $type, subject: $subject, start: $start, student: $studentId")
 
         val notificationTitleResId =
             if (type == NOTIFICATION_TYPE_CURRENT) R.string.timetable_now else R.string.timetable_next
